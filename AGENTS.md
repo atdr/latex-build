@@ -13,9 +13,10 @@ A reusable GitHub Actions workflow that compiles a repository's LaTeX document t
 | `scripts/setup-rungs.sh` | Replaces TeX Live's `rungs` with one that runs `gs`, for EPS figures |
 | `scripts/compile.sh` | Compiles; names the TeX Live package providing each missing file, or publishes anyway if a PDF still came out |
 | `scripts/check-quality.sh` | With `lint` or `annotate_warnings`, reports chktex findings and the final log's warnings as annotations and in the job summary |
+| `scripts/check-format.sh` | With `format_check`, checks the document's `.tex`, `.cls` and `.sty` files against tex-fmt, annotating and printing the diff |
 | `scripts/list-packages.sh` | Runs in a full TeX Live image; rewrites the package list from what the build used |
 | `scripts/publish-release.sh` | Attaches the PDF to a `build-<short SHA>` release |
-| `tests/` | Test documents, one per failure mode seen in real projects |
+| `tests/` | Test documents, one per failure mode seen in real projects; `tests/format` is deliberately not formatted |
 | `.github/workflows/test.yml` | Builds every test document on TeX Live 2016 and latest |
 | `.github/workflows/release-please.yml` | Release PRs, tags and the changelog |
 
@@ -39,6 +40,7 @@ Inputs (see `build.yml` for all of them):
 - `engine`: latexmk engine flag: `-pdf` (pdfLaTeX, Overleaf's default), `-xelatex` or `-lualatex`. It overrides any `.latexmkrc`.
 - `texlive_version`: TeX Live release year as a string (e.g. `"2017"`), or `latest`. A past year installs from its frozen `tlnet-final` archive on the Utah historic mirror (and the full-install job uses its `TL<year>-historic` image); the current year has neither yet, so it installs from the mirrors like `latest`.
 - `lint`, `annotate_warnings` and `fail_on_warnings` (all off by default): report chktex findings (annotated on their file and line) and the final LaTeX log's warnings (undefined references and citations, overfull boxes, missing characters, font and package warnings; annotated on the run) in the job summary. `fail_on_warnings` then fails the job after the PDF is published. The count is the workflow's `warnings` output.
+- `format_check` and `tex_fmt_version`: check in a separate `format` job that the tracked `.tex`, `.cls` and `.sty` files under the root file's directory are formatted as [tex-fmt](https://github.com/WGUNDERWOOD/tex-fmt) would format them (with the repository's `tex-fmt.toml`, if any). The job fails when one is not; the PDF is built and published regardless.
 - `texlive_version_override` and `update_packages`: pass through the caller's manual-run inputs. A run with another TeX Live version never commits the package list.
 
 Callers use the major version tag (`@v1`), which the release workflow moves to each new `v1.x.y` release, so fixes reach every document without a change there. Dependabot (`package-ecosystem: github-actions`) in each caller opens a PR when a new major version is released. An exact tag (`@v1.2.3`) also works, to freeze a document's build.
@@ -111,4 +113,6 @@ These already caused failures; keep them in mind when changing the scripts:
 - **Executable bit:** the workflow runs each script directly, so every file in `scripts/` must be committed as `100755` (`git ls-files -s scripts`).
 - **chktex is not in the package list:** `check-quality.sh` installs it with `tlmgr` when `lint` is on, after the list has been used, so linting never changes the list a document commits.
 - **Log warnings have no file:** TeX's log names a warning's input line but not reliably its file (that needs tracking the log's parentheses), so log warnings are annotated on the run, not on a file. Underfull boxes are left out: nearly every document has some, and they would drown the rest.
+- **tex-fmt versions:** formatting can change between tex-fmt releases, so a document's pre-commit hook and its CI check must use the same one. `check-format.sh` pins a default; callers whose hook pins another set `tex_fmt_version` to match. When bumping the default, bump `atdr/latex-boilerplate`'s hook `rev` too.
+- **`.bib` files are not format-checked:** they are usually exported from a reference manager, so reformatting them only creates churn on the next export.
 - **A hung compile:** the compile and package-listing steps have a `timeout-minutes` well above their normal duration, so a compile that hangs (rather than erroring) fails the job instead of running until the runner's own limit.
