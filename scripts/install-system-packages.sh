@@ -1,8 +1,12 @@
 #!/usr/bin/env bash
-# Installs system fonts that Overleaf provides (it ships Ubuntu's fonts) but
-# TeX Live does not, or not under the name documents use with fontspec:
+# Installs system packages that Overleaf provides but TeX Live does not:
 #
-# - Microsoft's core fonts (Arial, Times New Roman, etc.);
+# - Ghostscript: xdvipdfmx converts EPS figures by running TeX Live's
+#   rungs, which runs the system gs (see setup-rungs.sh); without it the
+#   image is dropped and xdvipdfmx fails with "pdf_ref_obj(): passed
+#   invalid object".
+# - Microsoft's core fonts (Arial, Times New Roman, etc.), which fontspec
+#   documents load by name;
 # - Inconsolata: TeX Live's copy is the zi4 variant, whose family name is
 #   "Inconsolatazi4", so \setmonofont{Inconsolata} finds only this one.
 #
@@ -19,5 +23,6 @@ sudo debconf-set-selections <<< \
 # rather than exporting it
 sudo env DEBIAN_FRONTEND=noninteractive apt-get update -q
 sudo env DEBIAN_FRONTEND=noninteractive apt-get install -y -q \
-  --no-install-recommends fontconfig ttf-mscorefonts-installer \
-  fonts-inconsolata
+  --no-install-recommends fontconfig ghostscript \
+  ttf-mscorefonts-installer fonts-inconsolata
+
