@@ -46,6 +46,12 @@ on:
           on other branches) upload it as a run artifact
         type: boolean
         default: true
+      fail_on_errors:
+        description: >-
+          Fail instead of publishing a PDF that compiled with errors (for
+          tests; Overleaf publishes it)
+        type: boolean
+        default: false
       artifact_suffix:
         description: Appended to artifact names, to keep them unique
         type: string
@@ -125,6 +131,7 @@ jobs:
         run: |
           "$LATEX_BUILD/scripts/install-system-packages.sh"
           "$LATEX_BUILD/scripts/setup-fonts.sh"
+          "$LATEX_BUILD/scripts/setup-rungs.sh"
       - name: Compile LaTeX document
         id: compile
         if: ${{ !steps.check.outputs.update_packages }}
@@ -134,8 +141,10 @@ jobs:
         run: '"$LATEX_BUILD/scripts/compile.sh"'
       - name: Fail on other errors
         if: >-
-          ${{ steps.compile.outcome == 'failure'
-          && !steps.compile.outputs.missing_packages }}
+          ${{ (steps.compile.outcome == 'failure'
+          && !steps.compile.outputs.missing_packages)
+          || (inputs.fail_on_errors
+          && steps.compile.outputs.compiled_with_errors) }}
         run: exit 1
       - name: Publish PDF as release
         # Releases are not subject to the artifact retention period
@@ -227,12 +236,19 @@ jobs:
           package_file: ${{ inputs.package_list }}
           texlive_version: ${{ steps.texlive.outputs.version }}
           repository: ${{ steps.texlive.outputs.repository }}
-      - name: Set up fonts
-        run: '"$LATEX_BUILD/scripts/setup-fonts.sh"'
+      - name: Set up fonts and rungs
+        run: |
+          "$LATEX_BUILD/scripts/setup-fonts.sh"
+          "$LATEX_BUILD/scripts/setup-rungs.sh"
       - name: Compile LaTeX document
         id: compile
         timeout-minutes: 20
         run: '"$LATEX_BUILD/scripts/compile.sh"'
+      - name: Fail on errors
+        if: >-
+          ${{ inputs.fail_on_errors
+          && steps.compile.outputs.compiled_with_errors }}
+        run: exit 1
       - name: Commit package list
         # Only reached if the document compiled with exactly the listed
         # packages. A run with another TeX Live version does not commit, so

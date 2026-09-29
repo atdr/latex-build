@@ -16,10 +16,10 @@ jobs:
       fail-fast: false
       matrix:
         document:
-          - {name: fonts, engine: -xelatex}
-          - {name: latex-error, engine: -xelatex}
-          - {name: bibtex-no-citations, engine: -pdf}
-          - {name: eps-figure, engine: -xelatex}
+          - {name: fonts, engine: -xelatex, strict: true}
+          - {name: latex-error, engine: -xelatex, strict: false}
+          - {name: bibtex-no-citations, engine: -pdf, strict: false}
+          - {name: eps-figure, engine: -xelatex, strict: true}
         texlive_version: ["2016", latest]
     uses: ./.github/workflows/build.yml
     permissions:
@@ -32,5 +32,7 @@ jobs:
         tests/${{ matrix.document.name }}/texlive-packages.txt
       commit_package_list: false
       publish_release: false
+      # Documents that must compile cleanly fail on any error
+      fail_on_errors: ${{ matrix.document.strict }}
       artifact_suffix: >-
         -${{ matrix.document.name }}-${{ matrix.texlive_version }}

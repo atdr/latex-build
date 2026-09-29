@@ -2,8 +2,9 @@
 # Installs system packages that Overleaf provides but TeX Live does not:
 #
 # - Ghostscript: xdvipdfmx converts EPS figures by running TeX Live's
-#   rungs, which runs the system gs; without either the image is dropped
-#   and xdvipdfmx fails with "pdf_ref_obj(): passed invalid object".
+#   rungs, which runs the system gs (see setup-rungs.sh); without it the
+#   image is dropped and xdvipdfmx fails with "pdf_ref_obj(): passed
+#   invalid object".
 # - Microsoft's core fonts (Arial, Times New Roman, etc.), which fontspec
 #   documents load by name;
 # - Inconsolata: TeX Live's copy is the zi4 variant, whose family name is
@@ -25,11 +26,3 @@ sudo env DEBIAN_FRONTEND=noninteractive apt-get install -y -q \
   --no-install-recommends fontconfig ghostscript \
   ttf-mscorefonts-installer fonts-inconsolata
 
-# rungs comes with a TeX Live package the generated list does not include
-# (it records the programs latexmk runs, not those xdvipdfmx starts). On
-# Unix it only runs gs, so provide that where TeX Live has none; TeX Live's
-# own bin directory comes first on PATH when it does.
-if [ ! -e /usr/local/bin/rungs ]; then
-  printf '#!/bin/sh\nexec gs "$@"\n' | sudo tee /usr/local/bin/rungs > /dev/null
-  sudo chmod +x /usr/local/bin/rungs
-fi
