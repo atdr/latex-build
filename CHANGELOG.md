@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.1.2](https://github.com/atdr/latex-build/compare/v1.1.1...v1.1.2) (2026-09-29)
+
+
+### Bug Fixes
+
+* stop registering TeX Live's Type 1 fonts with fontconfig ([#10](https://github.com/atdr/latex-build/issues/10)) ([ae2a4be](https://github.com/atdr/latex-build/commit/ae2a4be3c2b4daa50d33a3d9162196e587395c0d))
+
 ## [1.1.1](https://github.com/atdr/latex-build/compare/v1.1.0...v1.1.1) (2026-09-29)
 
 
