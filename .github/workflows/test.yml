@@ -33,4 +33,3 @@ jobs:
       publish_release: false
       artifact_suffix: >-
         -${{ matrix.document.name }}-${{ matrix.texlive_version }}
-      build_ref: ${{ github.event.pull_request.head.sha || github.sha }}
