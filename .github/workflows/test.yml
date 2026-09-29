@@ -1,0 +1,36 @@
+name: Test
+
+# Builds each test document with this commit's workflow and scripts, on an
+# old and the latest TeX Live release, as a calling repository would. The
+# package lists are not committed, so every run also exercises regenerating
+# them in the full TeX Live image.
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        document:
+          - {name: fonts, engine: -xelatex}
+          - {name: latex-error, engine: -xelatex}
+          - {name: bibtex-no-citations, engine: -pdf}
+        texlive_version: ["2016", latest]
+    uses: ./.github/workflows/build.yml
+    permissions:
+      contents: write
+    with:
+      root_file: tests/${{ matrix.document.name }}/main.tex
+      engine: ${{ matrix.document.engine }}
+      texlive_version: ${{ matrix.texlive_version }}
+      package_list: >-
+        tests/${{ matrix.document.name }}/texlive-packages.txt
+      commit_package_list: false
+      publish_release: false
+      artifact_suffix: >-
+        -${{ matrix.document.name }}-${{ matrix.texlive_version }}
+      build_ref: ${{ github.event.pull_request.head.sha || github.sha }}

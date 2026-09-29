@@ -1,0 +1,10 @@
+% XeLaTeX with fonts loaded by name: Fira Sans ships with TeX Live but is
+% only found once TeX Live's fonts are registered with fontconfig; Arial is
+% not in TeX Live at all and comes from Microsoft's core fonts.
+\documentclass{article}
+\usepackage{fontspec}
+\setmainfont{Fira Sans}
+\setsansfont{Arial}
+\begin{document}
+Fira Sans, the main font. \textsf{Arial, the sans serif font.}
+\end{document}

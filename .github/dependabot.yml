@@ -1,0 +1,9 @@
+version: 2
+updates:
+  # Actions used by the build and release workflows
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+    commit-message:
+      prefix: fix

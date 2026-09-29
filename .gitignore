@@ -1,0 +1,10 @@
+# LaTeX outputs from local test builds
+*.aux
+*.bbl
+*.blg
+*.fdb_latexmk
+*.fls
+*.log
+*.out
+*.pdf
+*.xdv

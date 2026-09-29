@@ -1,0 +1,9 @@
+% XeLaTeX with a LaTeX error that does not stop the PDF being written.
+% Overleaf still produces a PDF; without latexmk -f, a XeLaTeX build stops
+% before xdvipdfmx and leaves only an .xdv file.
+\documentclass{article}
+\begin{document}
+Text before the error.
+\item An item outside any list: ``Something's wrong--perhaps a missing
+\textbackslash item''.
+\end{document}

@@ -1,0 +1,260 @@
+name: Build LaTeX document
+
+# Reusable workflow: compiles the calling repository's LaTeX document and
+# publishes the PDF. Builds with only the packages in the package list; if
+# that file is missing, the build is missing a TeX Live package, or the
+# caller asks for it, regenerates the list from a full TeX Live install,
+# builds again with the new list and commits it.
+on:
+  workflow_call:
+    inputs:
+      root_file:
+        description: Root .tex file to compile, relative to the repository
+        type: string
+        default: main.tex
+      engine:
+        description: >-
+          latexmk engine flag: -pdf (pdfLaTeX, Overleaf's default), -xelatex
+          or -lualatex
+        type: string
+        default: -pdf
+      texlive_version:
+        description: TeX Live release year (e.g. "2017"), or latest
+        type: string
+        default: latest
+      texlive_version_override:
+        description: >-
+          Build once with this TeX Live release instead (a manual run's
+          input); such a run never commits the package list
+        type: string
+        default: ""
+      update_packages:
+        description: Regenerate the package list even if the build passes
+        type: boolean
+        default: false
+      package_list:
+        description: TeX Live packages to install, one tlmgr name per line
+        type: string
+        default: texlive-packages.txt
+      commit_package_list:
+        description: Commit a regenerated package list to the branch
+        type: boolean
+        default: true
+      publish_release:
+        description: >-
+          Publish the PDF as a release on the default branch; otherwise (and
+          on other branches) upload it as a run artifact
+        type: boolean
+        default: true
+      artifact_suffix:
+        description: Appended to artifact names, to keep them unique
+        type: string
+        default: ""
+      build_ref:
+        description: >-
+          Ref of atdr/latex-build whose scripts to run; leave as is, it
+          follows the workflow's own release
+        type: string
+        default: v1.0.0 # x-release-please-version
+
+env:
+  ROOT_FILE: ${{ inputs.root_file }}
+  ENGINE: ${{ inputs.engine }}
+  PACKAGE_LIST: ${{ inputs.package_list }}
+  VERSION: ${{ inputs.texlive_version_override || inputs.texlive_version }}
+
+jobs:
+  build_latex:
+
+    runs-on: ubuntu-latest
+
+    # Needed to create tags and releases
+    permissions:
+      contents: write
+
+    outputs:
+      update_packages: >-
+        ${{ steps.check.outputs.update_packages
+        || steps.compile.outputs.missing_packages }}
+
+    steps:
+      - name: Set up Git repository
+        uses: actions/checkout@v7
+        with:
+          # Keep the token away from the build; only publishing uses it
+          persist-credentials: false
+      - name: Fetch build scripts
+        env:
+          REF: ${{ inputs.build_ref }}
+        run: &fetch |
+          # Outside the workspace, so git clean and the build never see it
+          dir="$RUNNER_TEMP/latex-build"
+          git init -q "$dir"
+          git -C "$dir" fetch -q --depth 1 \
+            https://github.com/atdr/latex-build.git "$REF"
+          git -C "$dir" checkout -q FETCH_HEAD
+          echo "LATEX_BUILD=$dir" >> "$GITHUB_ENV"
+      - name: Check package list
+        id: check
+        env:
+          UPDATE: ${{ inputs.update_packages }}
+        run: |
+          if [ "$UPDATE" = true ] || [ ! -f "$PACKAGE_LIST" ]; then
+            echo "update_packages=true" >> "$GITHUB_OUTPUT"
+          fi
+      - name: Select TeX Live release
+        id: texlive
+        if: ${{ !steps.check.outputs.update_packages }}
+        run: '"$LATEX_BUILD/scripts/select-texlive.sh"'
+      - name: Install TeX Live
+        if: ${{ !steps.check.outputs.update_packages }}
+        uses: zauguin/install-texlive@v4
+        with:
+          package_file: ${{ inputs.package_list }}
+          texlive_version: ${{ steps.texlive.outputs.version }}
+          repository: ${{ steps.texlive.outputs.repository }}
+      - name: Set up fonts
+        if: ${{ !steps.check.outputs.update_packages }}
+        run: '"$LATEX_BUILD/scripts/setup-fonts.sh"'
+      - name: Compile LaTeX document
+        id: compile
+        if: ${{ !steps.check.outputs.update_packages }}
+        # A missing package is handled by the update_packages job
+        continue-on-error: true
+        timeout-minutes: 20
+        run: '"$LATEX_BUILD/scripts/compile.sh"'
+      - name: Fail on other errors
+        if: >-
+          ${{ steps.compile.outcome == 'failure'
+          && !steps.compile.outputs.missing_packages }}
+        run: exit 1
+      - name: Publish PDF as release
+        # Releases are not subject to the artifact retention period
+        if: >-
+          ${{ steps.compile.outcome == 'success' && inputs.publish_release
+          && github.ref_name == github.event.repository.default_branch }}
+        env: &publish_env
+          GH_TOKEN: ${{ github.token }}
+          SHA: ${{ github.sha }}
+          WARNING: >-
+            ${{ steps.compile.outputs.compiled_with_errors
+            && 'Compiled with errors; see the run-log artifact.' || '' }}
+        run: '"$LATEX_BUILD/scripts/publish-release.sh"'
+      - name: Name PDF
+        if: ${{ steps.compile.outcome == 'success' }}
+        run: echo "PDF=$(basename "$ROOT_FILE" .tex).pdf" >> "$GITHUB_ENV"
+      - name: Upload PDF to workflow run
+        # Other branches keep the PDF only for the artifact retention period
+        if: >-
+          ${{ steps.compile.outcome == 'success' && (!inputs.publish_release
+          || github.ref_name != github.event.repository.default_branch) }}
+        uses: actions/upload-artifact@v7
+        with:
+          name: pdf${{ inputs.artifact_suffix }}
+          path: ${{ env.PDF }}
+          if-no-files-found: error
+      - name: Upload logs
+        if: ${{ failure() || steps.compile.outputs.compiled_with_errors }}
+        uses: actions/upload-artifact@v7
+        with:
+          name: run-log${{ inputs.artifact_suffix }}
+          path: "*.log"
+
+  update_packages:
+    needs: build_latex
+    if: ${{ needs.build_latex.outputs.update_packages }}
+
+    runs-on: ubuntu-latest
+
+    # Needed to commit the package list, and to create tags and releases
+    permissions:
+      contents: write
+
+    steps:
+      - name: Set up Git repository
+        uses: actions/checkout@v7
+        with:
+          # Keep the token away from the builds; only committing and
+          # publishing use it
+          persist-credentials: false
+      - name: Fetch build scripts
+        env:
+          REF: ${{ inputs.build_ref }}
+        run: *fetch
+      - name: List packages the document uses
+        # Downloads all of TeX Live (~2 min); a generous timeout in case the
+        # compile hangs instead of erroring
+        timeout-minutes: 20
+        run: |
+          # A past release has a frozen image; the current one is latest
+          tag=latest
+          if [ "$VERSION" != latest ] && docker manifest inspect \
+            "texlive/texlive:TL${VERSION}-historic" > /dev/null 2>&1; then
+            tag="TL${VERSION}-historic"
+          fi
+          docker run --rm -v "$PWD:/workdir" -w /workdir \
+            -v "$LATEX_BUILD:/latex-build:ro" \
+            -e ROOT_FILE -e ENGINE -e PACKAGE_LIST \
+            "texlive/texlive:$tag" /latex-build/scripts/list-packages.sh
+          # Remove the full build's outputs (owned by the container's root
+          # user), so the next build cannot reuse them
+          sudo chown -R "$(id -u):$(id -g)" .
+          git clean -fdx -e "$PACKAGE_LIST"
+      - name: Select TeX Live release
+        id: texlive
+        run: '"$LATEX_BUILD/scripts/select-texlive.sh"'
+      - name: Install TeX Live
+        uses: zauguin/install-texlive@v4
+        with:
+          package_file: ${{ inputs.package_list }}
+          texlive_version: ${{ steps.texlive.outputs.version }}
+          repository: ${{ steps.texlive.outputs.repository }}
+      - name: Set up fonts
+        run: '"$LATEX_BUILD/scripts/setup-fonts.sh"'
+      - name: Compile LaTeX document
+        id: compile
+        timeout-minutes: 20
+        run: '"$LATEX_BUILD/scripts/compile.sh"'
+      - name: Commit package list
+        # Only reached if the document compiled with exactly the listed
+        # packages. A run with another TeX Live version does not commit, so
+        # the list always matches texlive_version; nor does a run for a tag,
+        # which has no branch to commit to.
+        if: >-
+          ${{ inputs.commit_package_list && github.ref_type == 'branch'
+          && (!inputs.texlive_version_override
+          || inputs.texlive_version_override == inputs.texlive_version) }}
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          git add "$PACKAGE_LIST"
+          git diff --cached --quiet && exit 0
+          bot='github-actions[bot]'
+          git config user.name "$bot"
+          git config user.email "41898282+$bot@users.noreply.github.com"
+          git commit -m "chore: update TeX Live package list"
+          remote="https://x-access-token:${GH_TOKEN}@github.com"
+          git push "$remote/${GITHUB_REPOSITORY}.git" "HEAD:${GITHUB_REF_NAME}"
+      - name: Publish PDF as release
+        if: >-
+          ${{ inputs.publish_release
+          && github.ref_name == github.event.repository.default_branch }}
+        env: *publish_env
+        run: '"$LATEX_BUILD/scripts/publish-release.sh"'
+      - name: Name PDF
+        run: echo "PDF=$(basename "$ROOT_FILE" .tex).pdf" >> "$GITHUB_ENV"
+      - name: Upload PDF to workflow run
+        if: >-
+          ${{ !inputs.publish_release
+          || github.ref_name != github.event.repository.default_branch }}
+        uses: actions/upload-artifact@v7
+        with:
+          name: pdf${{ inputs.artifact_suffix }}
+          path: ${{ env.PDF }}
+          if-no-files-found: error
+      - name: Upload logs
+        if: ${{ failure() || steps.compile.outputs.compiled_with_errors }}
+        uses: actions/upload-artifact@v7
+        with:
+          name: run-log${{ inputs.artifact_suffix }}
+          path: "*.log"

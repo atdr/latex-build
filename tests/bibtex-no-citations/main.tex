@@ -1,0 +1,9 @@
+% pdfLaTeX with a bibliography but no \cite: BibTeX reports "I found no
+% \citation commands" and exits with an error, which Overleaf ignores.
+\documentclass{article}
+\begin{document}
+A document with a bibliography and nothing cited.
+\bibliographystyle{plain}
+% Paths are relative to the repository root, where latexmk runs
+\bibliography{tests/bibtex-no-citations/references}
+\end{document}
