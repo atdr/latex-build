@@ -3,13 +3,7 @@
   "include-component-in-tag": false,
   "packages": {
     ".": {
-      "release-type": "simple",
-      "extra-files": [
-        {
-          "type": "generic",
-          "path": ".github/workflows/build.yml"
-        }
-      ]
+      "release-type": "simple"
     }
   }
 }

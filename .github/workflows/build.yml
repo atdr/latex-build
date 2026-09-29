@@ -52,10 +52,10 @@ on:
         default: ""
       build_ref:
         description: >-
-          Ref of atdr/latex-build whose scripts to run; leave as is, it
-          follows the workflow's own release
+          Ref of atdr/latex-build whose scripts to run; by default the
+          commit this workflow was called at
         type: string
-        default: v1.0.0 # x-release-please-version
+        default: ""
 
 env:
   ROOT_FILE: ${{ inputs.root_file }}
@@ -85,7 +85,9 @@ jobs:
           persist-credentials: false
       - name: Fetch build scripts
         env:
-          REF: ${{ inputs.build_ref }}
+          # job.workflow_sha is this workflow's own commit (the one @v1
+          # resolved to), not the caller's
+          REF: ${{ inputs.build_ref || job.workflow_sha }}
         run: &fetch |
           # Outside the workspace, so git clean and the build never see it
           dir="$RUNNER_TEMP/latex-build"
@@ -181,7 +183,7 @@ jobs:
           persist-credentials: false
       - name: Fetch build scripts
         env:
-          REF: ${{ inputs.build_ref }}
+          REF: ${{ inputs.build_ref || job.workflow_sha }}
         run: *fetch
       - name: Install Microsoft's core fonts
         # On the runner, where the package is available; mounted into the

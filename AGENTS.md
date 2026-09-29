@@ -42,7 +42,7 @@ Callers use the major version tag (`@v1`), which the release workflow moves to e
 
 ### Where the scripts come from
 
-A called workflow cannot use `./` paths into its own repository: those resolve in the caller's checkout. So each job fetches this repository at `build_ref` into `$RUNNER_TEMP/latex-build` (outside the workspace, where `git clean` and the build cannot touch it) and runs the scripts from there. `build_ref` defaults to the workflow's own exact release tag (so `@v1` still fetches the scripts of the release it points at); release-please keeps that default in step with each release (the `x-release-please-version` comment). Only the tests override it, to run the commit under test.
+A called workflow cannot use `./` paths into its own repository: those resolve in the caller's checkout. So each job fetches this repository at `job.workflow_sha` (the commit of this workflow that the caller's `@v1` resolved to, not the caller's own) into `$RUNNER_TEMP/latex-build` (outside the workspace, where `git clean` and the build cannot touch it) and runs the scripts from there. The scripts therefore always match the workflow running them, with no version to keep in step. `build_ref` overrides that ref, for debugging only.
 
 ## Build flow
 
@@ -77,7 +77,7 @@ The list is rewritten from scratch, so unused packages are dropped as well as mi
 ## Changing things
 
 - **Test in Actions:** there is no local equivalent of the runner. Push a branch and open a PR; `test.yml` builds every test document on TeX Live 2016 and latest, since installers, latexmk and log formats differ between years. Add a test document for any new failure mode.
-- **Releases:** merge to `main` with Conventional Commit messages; release-please opens a release PR, and merging it tags `vX.Y.Z`, moves `vX` to it and updates `build_ref`'s default in the same commit. Do not hand-edit `CHANGELOG.md` or the version on the `build_ref` line, and do not move `vX` by hand. Every `fix:` or `feat:` merged to `main` reaches all callers on the next release, so keep changes that callers do not see as `ci:`, `test:`, `docs:` or `chore:`.
+- **Releases:** merge to `main` with Conventional Commit messages; release-please opens a release PR, and merging it tags `vX.Y.Z` and moves `vX` to it. Do not hand-edit `CHANGELOG.md`, and do not move `vX` by hand. Every `fix:` or `feat:` merged to `main` reaches all callers on the next release, so keep changes that callers do not see as `ci:`, `test:`, `docs:` or `chore:`.
 - **Dependabot PRs** are titled `fix:`, since most bump actions that `build.yml` runs in callers. When one only touches `release-please.yml` or `test.yml`, squash-merge it with a `ci:` subject instead, so it does not cut a release.
 - **Breaking changes** (a renamed or removed input, a changed default): mark the commit `feat!:` or add `BREAKING CHANGE:` to its body, so callers get a major version.
 
@@ -101,5 +101,6 @@ These already caused failures; keep them in mind when changing the scripts:
 - **Missing programs:** a missing program (e.g. `biber`) is not a missing file, so it does not trigger regeneration; a manual run with `update_packages` does pick it up.
 - **Fonts outside TeX Live:** `install-ms-fonts.sh` installs Microsoft's core fonts (`ttf-mscorefonts-installer`, EULA pre-accepted via `debconf-set-selections`) for `fontspec` names like Arial that TeX Live does not ship. They are not part of TeX Live, so `list-packages.sh` cannot list them; they are installed unconditionally instead. It runs on the Ubuntu runner only: the full TeX Live image's Debian has the package only in `contrib`, which is not enabled (and old historic images have no live apt repositories at all), so `update_packages` mounts the runner's `/usr/share/fonts/truetype/msttcorefonts` into the container read-only.
 - **Fonts TeX Live does ship (Inconsolata, Fira Sans, EB Garamond, etc.):** they sit as files under the TeX Live tree, which fontconfig does not search until told to. `setup-fonts.sh` registers `texmf-dist/fonts/{opentype,truetype,type1}` with fontconfig, both on the runner and at the start of `list-packages.sh` in the full image. It writes only a fontconfig file, so it needs no package manager.
+- **Workflow files and `GITHUB_TOKEN`:** release-please runs with `GITHUB_TOKEN`, which may not change files under `.github/workflows/` ("Error adding to tree"). Keep version strings out of workflow files, so release PRs never need to touch them.
 - **Executable bit:** the workflow runs each script directly, so every file in `scripts/` must be committed as `100755` (`git ls-files -s scripts`).
 - **A hung compile:** the compile and package-listing steps have a `timeout-minutes` well above their normal duration, so a compile that hangs (rather than erroring) fails the job instead of running until the runner's own limit.
