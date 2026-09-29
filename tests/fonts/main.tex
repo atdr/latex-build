@@ -1,10 +1,13 @@
 % XeLaTeX with fonts loaded by name: Fira Sans ships with TeX Live but is
 % only found once TeX Live's fonts are registered with fontconfig; Arial is
-% not in TeX Live at all and comes from Microsoft's core fonts.
+% not in TeX Live at all and comes from Microsoft's core fonts; TeX Live's
+% Inconsolata is named Inconsolatazi4, so this one is Ubuntu's.
 \documentclass{article}
 \usepackage{fontspec}
 \setmainfont{Fira Sans}
 \setsansfont{Arial}
+\setmonofont{Inconsolata}
 \begin{document}
 Fira Sans, the main font. \textsf{Arial, the sans serif font.}
+\texttt{Inconsolata, the monospaced font.}
 \end{document}

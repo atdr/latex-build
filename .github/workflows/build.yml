@@ -62,6 +62,11 @@ env:
   ENGINE: ${{ inputs.engine }}
   PACKAGE_LIST: ${{ inputs.package_list }}
   VERSION: ${{ inputs.texlive_version_override || inputs.texlive_version }}
+  # Installed by install-system-fonts.sh on the runner; mounted read-only
+  # into the full TeX Live image, which cannot install them itself
+  SYSTEM_FONT_DIRS: >-
+    /usr/share/fonts/truetype/msttcorefonts
+    /usr/share/fonts/truetype/inconsolata
 
 jobs:
   build_latex:
@@ -118,7 +123,7 @@ jobs:
       - name: Set up fonts
         if: ${{ !steps.check.outputs.update_packages }}
         run: |
-          "$LATEX_BUILD/scripts/install-ms-fonts.sh"
+          "$LATEX_BUILD/scripts/install-system-fonts.sh"
           "$LATEX_BUILD/scripts/setup-fonts.sh"
       - name: Compile LaTeX document
         id: compile
@@ -185,25 +190,28 @@ jobs:
         env:
           REF: ${{ inputs.build_ref || job.workflow_sha }}
         run: *fetch
-      - name: Install Microsoft's core fonts
-        # On the runner, where the package is available; mounted into the
+      - name: Install system fonts
+        # On the runner, where the packages are available; mounted into the
         # full TeX Live image below
-        run: '"$LATEX_BUILD/scripts/install-ms-fonts.sh"'
+        run: '"$LATEX_BUILD/scripts/install-system-fonts.sh"'
       - name: List packages the document uses
         # Downloads all of TeX Live (~2 min); a generous timeout in case the
         # compile hangs instead of erroring
         timeout-minutes: 20
         run: |
-          fonts=/usr/share/fonts/truetype/msttcorefonts
           # A past release has a frozen image; the current one is latest
           tag=latest
           if [ "$VERSION" != latest ] && docker manifest inspect \
             "texlive/texlive:TL${VERSION}-historic" > /dev/null 2>&1; then
             tag="TL${VERSION}-historic"
           fi
+          mounts=()
+          for dir in $SYSTEM_FONT_DIRS; do
+            mounts+=(-v "$dir:$dir:ro")
+          done
           docker run --rm -v "$PWD:/workdir" -w /workdir \
             -v "$LATEX_BUILD:/latex-build:ro" \
-            -v "$fonts:$fonts:ro" \
+            "${mounts[@]}" \
             -e ROOT_FILE -e ENGINE -e PACKAGE_LIST \
             "texlive/texlive:$tag" /latex-build/scripts/list-packages.sh
           # Remove the full build's outputs (owned by the container's root
