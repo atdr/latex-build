@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.1.3](https://github.com/atdr/latex-build/compare/v1.1.2...v1.1.3) (2026-09-29)
+
+
+### Bug Fixes
+
+* install Ghostscript on the runner for EPS figures ([#12](https://github.com/atdr/latex-build/issues/12)) ([78c7c6d](https://github.com/atdr/latex-build/commit/78c7c6de977160cc6f017c3a337ba31c2df2c500))
+
 ## [1.1.2](https://github.com/atdr/latex-build/compare/v1.1.1...v1.1.2) (2026-09-29)
 
 
