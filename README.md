@@ -1,10 +1,16 @@
 # latex-build
 
+[![GitHub release](https://img.shields.io/github/v/release/atdr/latex-build?style=flat-square&label=release)](https://github.com/atdr/latex-build/releases)
+[![GitHub last commit](https://img.shields.io/github/last-commit/atdr/latex-build.svg?style=flat-square)](https://github.com/atdr/latex-build)
+[![Test](https://img.shields.io/github/actions/workflow/status/atdr/latex-build/test.yml?branch=main&style=flat-square&label=test)](https://github.com/atdr/latex-build/actions/workflows/test.yml)
+
 A reusable GitHub Actions workflow that compiles a LaTeX document to PDF on every push and publishes it as a GitHub release, much as Overleaf would build it.
 
 - Installs only the TeX Live packages the document uses, from any TeX Live release since 2016 or the latest one, and works out that list itself.
 - Loads fonts by name through `fontspec`, both those TeX Live ships and Microsoft's core fonts such as Arial.
 - Publishes a PDF even when the build reports errors, as Overleaf does, with a warning on the release.
+
+To start a new document, use the [`atdr/latex-boilerplate`](https://github.com/atdr/latex-boilerplate) template, which calls this workflow with every file in place.
 
 ## Usage
 
