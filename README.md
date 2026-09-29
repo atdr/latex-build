@@ -53,7 +53,19 @@ updates:
 
 [`atdr/latex-boilerplate`](https://github.com/atdr/latex-boilerplate) is a template repository with both files in place.
 
-The first run generates `texlive-packages.txt` and commits it. Each build on the default branch is published as a release tagged `build-<short SHA>` with the PDF attached.
+Each build on the default branch is published as a release tagged `build-<short SHA>` with the PDF attached. On other branches the PDF is attached to the workflow run as the `pdf` artifact.
+
+## The package list
+
+The first run generates `texlive-packages.txt` and commits it. After that, the list is regenerated and committed automatically when the compile fails on a missing file that a TeX Live package provides, which covers new packages in the document and a new `root_file`.
+
+Run the workflow manually (Actions tab → the workflow → Run workflow) with its `update_packages` input ticked after changing:
+
+- `engine`: the new engine's program (e.g. `pdftex` for `-pdf`) is not in the list, and a missing program does not trigger regeneration.
+- `texlive_version`: package names differ between releases, so installing the old list can fail before anything compiles.
+
+A manual run also drops packages the document no longer uses; automatic regeneration only happens on a failure, so they otherwise stay listed.
+
 
 Set `lint: true` and `annotate_warnings: true` to have chktex findings and LaTeX log warnings (undefined references, overfull boxes and the like) reported as annotations and in the job summary.
 
