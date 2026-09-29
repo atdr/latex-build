@@ -36,3 +36,36 @@ jobs:
       fail_on_errors: ${{ matrix.document.strict }}
       artifact_suffix: >-
         -${{ matrix.document.name }}-${{ matrix.texlive_version }}
+
+  # Lint and log warnings on a document known to have some; the check job
+  # fails unless both kinds were reported
+  warnings:
+    strategy:
+      fail-fast: false
+      matrix:
+        texlive_version: ["2016", latest]
+    uses: ./.github/workflows/build.yml
+    permissions:
+      contents: write
+    with:
+      root_file: tests/warnings/main.tex
+      engine: -pdf
+      texlive_version: ${{ matrix.texlive_version }}
+      package_list: tests/warnings/texlive-packages.txt
+      commit_package_list: false
+      publish_release: false
+      lint: true
+      annotate_warnings: true
+      artifact_suffix: -warnings-${{ matrix.texlive_version }}
+
+  check_warnings:
+    needs: warnings
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check that warnings were reported
+        env:
+          WARNINGS: ${{ needs.warnings.outputs.warnings }}
+        # An undefined reference, an overfull box and a chktex finding
+        run: |
+          echo "Reported $WARNINGS warning(s)"
+          [ "${WARNINGS:-0}" -ge 3 ]
