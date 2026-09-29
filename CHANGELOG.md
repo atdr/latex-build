@@ -1,5 +1,18 @@
 # Changelog
 
+## [1.2.0](https://github.com/atdr/latex-build/compare/v1.1.3...v1.2.0) (2026-09-29)
+
+
+### Features
+
+* add an optional tex-fmt format check ([#15](https://github.com/atdr/latex-build/issues/15)) ([750fe4c](https://github.com/atdr/latex-build/commit/750fe4c9bcdcc1accd0ee48c85270aaca7639d63))
+* annotate chktex findings and LaTeX log warnings ([#14](https://github.com/atdr/latex-build/issues/14)) ([bfa2977](https://github.com/atdr/latex-build/commit/bfa2977eb15ac315df1d51798123daa0a1c59906))
+
+
+### Bug Fixes
+
+* regenerate the package list when overriding the TeX Live version ([#18](https://github.com/atdr/latex-build/issues/18)) ([666f1b9](https://github.com/atdr/latex-build/commit/666f1b9616e97e5ed7263b4be63492e27f0971b2))
+
 ## [1.1.3](https://github.com/atdr/latex-build/compare/v1.1.2...v1.1.3) (2026-09-29)
 
 
