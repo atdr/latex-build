@@ -27,7 +27,7 @@ on:
 
 jobs:
   build:
-    uses: atdr/latex-build/.github/workflows/build.yml@v1.0.0 # x-release-please-version
+    uses: atdr/latex-build/.github/workflows/build.yml@v1
     permissions:
       contents: write
     with:
@@ -38,7 +38,7 @@ jobs:
       update_packages: ${{ inputs.update_packages || false }}
 ```
 
-and `.github/dependabot.yml`, so each new release arrives as a PR:
+`@v1` follows every 1.x release, so fixes arrive without any change in the document's repository. Add `.github/dependabot.yml` too, so a new major version (with breaking changes) arrives as a PR:
 
 ```yaml
 version: 2

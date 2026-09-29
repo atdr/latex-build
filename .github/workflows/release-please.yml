@@ -13,3 +13,18 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: googleapis/release-please-action@v5
+        id: release
+      - name: Move major version tag
+        # Callers use @v1; point it at each new v1.x.y release
+        if: ${{ steps.release.outputs.release_created }}
+        env:
+          GH_TOKEN: ${{ github.token }}
+          MAJOR: v${{ steps.release.outputs.major }}
+          SHA: ${{ steps.release.outputs.sha }}
+        run: |
+          refs="repos/$GITHUB_REPOSITORY/git/refs"
+          if gh api "$refs/tags/$MAJOR" > /dev/null 2>&1; then
+            gh api -X PATCH "$refs/tags/$MAJOR" -f sha="$SHA" -F force=true
+          else
+            gh api -X POST "$refs" -f ref="refs/tags/$MAJOR" -f sha="$SHA"
+          fi
