@@ -8,7 +8,8 @@ A reusable GitHub Actions workflow that compiles a repository's LaTeX document t
 |---|---|
 | `.github/workflows/build.yml` | The reusable workflow (`on: workflow_call`) |
 | `scripts/select-texlive.sh` | Picks the TeX Live repository for a release year (the frozen historic archive for past years) |
-| `scripts/setup-fonts.sh` | Registers TeX Live's fonts with fontconfig and installs Microsoft's core fonts, so `fontspec` can load fonts by name |
+| `scripts/install-ms-fonts.sh` | Installs Microsoft's core fonts (Arial etc.) on the runner, for `fontspec` names TeX Live does not ship |
+| `scripts/setup-fonts.sh` | Registers TeX Live's own fonts with fontconfig, so `fontspec` can load them by name |
 | `scripts/compile.sh` | Compiles; names the TeX Live package providing each missing file, or publishes anyway if a PDF still came out |
 | `scripts/list-packages.sh` | Runs in a full TeX Live image; rewrites the package list from what the build used |
 | `scripts/publish-release.sh` | Attaches the PDF to a `build-<short SHA>` release |
@@ -97,6 +98,7 @@ These already caused failures; keep them in mind when changing the scripts:
 - **Token exposure:** checkouts use `persist-credentials: false`, so the token is not on disk while TeX and the scripts run. Only the commit step (which pushes with `GH_TOKEN`) and the publish step receive it; keep new steps that way.
 - **Failure handling in `build_latex`:** its compile step uses `continue-on-error` so that a missing package can hand over to `update_packages`. Only a failure that leaves no PDF and names no file a TeX Live package provides is re-raised, by the "Fail on other errors" step.
 - **Missing programs:** a missing program (e.g. `biber`) is not a missing file, so it does not trigger regeneration; a manual run with `update_packages` does pick it up.
-- **Fonts outside TeX Live:** `setup-fonts.sh` installs Microsoft's core fonts (`ttf-mscorefonts-installer`, EULA pre-accepted via `debconf-set-selections`) for `fontspec` names like Arial that TeX Live does not ship. They are not part of TeX Live, so `list-packages.sh` cannot list them; `setup-fonts.sh` installs them unconditionally instead.
-- **Fonts TeX Live does ship (Inconsolata, Fira Sans, EB Garamond, etc.):** they sit as files under the TeX Live tree, which fontconfig does not search until told to. `setup-fonts.sh` registers `texmf-dist/fonts/{opentype,truetype,type1}` with fontconfig, both on the runner and at the start of `list-packages.sh` in the full image. It needs `apt`.
+- **Fonts outside TeX Live:** `install-ms-fonts.sh` installs Microsoft's core fonts (`ttf-mscorefonts-installer`, EULA pre-accepted via `debconf-set-selections`) for `fontspec` names like Arial that TeX Live does not ship. They are not part of TeX Live, so `list-packages.sh` cannot list them; they are installed unconditionally instead. It runs on the Ubuntu runner only: the full TeX Live image's Debian has the package only in `contrib`, which is not enabled (and old historic images have no live apt repositories at all), so `update_packages` mounts the runner's `/usr/share/fonts/truetype/msttcorefonts` into the container read-only.
+- **Fonts TeX Live does ship (Inconsolata, Fira Sans, EB Garamond, etc.):** they sit as files under the TeX Live tree, which fontconfig does not search until told to. `setup-fonts.sh` registers `texmf-dist/fonts/{opentype,truetype,type1}` with fontconfig, both on the runner and at the start of `list-packages.sh` in the full image. It writes only a fontconfig file, so it needs no package manager.
+- **Executable bit:** the workflow runs each script directly, so every file in `scripts/` must be committed as `100755` (`git ls-files -s scripts`).
 - **A hung compile:** the compile and package-listing steps have a `timeout-minutes` well above their normal duration, so a compile that hangs (rather than erroring) fails the job instead of running until the runner's own limit.

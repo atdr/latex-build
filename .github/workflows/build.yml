@@ -115,7 +115,9 @@ jobs:
           repository: ${{ steps.texlive.outputs.repository }}
       - name: Set up fonts
         if: ${{ !steps.check.outputs.update_packages }}
-        run: '"$LATEX_BUILD/scripts/setup-fonts.sh"'
+        run: |
+          "$LATEX_BUILD/scripts/install-ms-fonts.sh"
+          "$LATEX_BUILD/scripts/setup-fonts.sh"
       - name: Compile LaTeX document
         id: compile
         if: ${{ !steps.check.outputs.update_packages }}
@@ -181,11 +183,16 @@ jobs:
         env:
           REF: ${{ inputs.build_ref }}
         run: *fetch
+      - name: Install Microsoft's core fonts
+        # On the runner, where the package is available; mounted into the
+        # full TeX Live image below
+        run: '"$LATEX_BUILD/scripts/install-ms-fonts.sh"'
       - name: List packages the document uses
         # Downloads all of TeX Live (~2 min); a generous timeout in case the
         # compile hangs instead of erroring
         timeout-minutes: 20
         run: |
+          fonts=/usr/share/fonts/truetype/msttcorefonts
           # A past release has a frozen image; the current one is latest
           tag=latest
           if [ "$VERSION" != latest ] && docker manifest inspect \
@@ -194,6 +201,7 @@ jobs:
           fi
           docker run --rm -v "$PWD:/workdir" -w /workdir \
             -v "$LATEX_BUILD:/latex-build:ro" \
+            -v "$fonts:$fonts:ro" \
             -e ROOT_FILE -e ENGINE -e PACKAGE_LIST \
             "texlive/texlive:$tag" /latex-build/scripts/list-packages.sh
           # Remove the full build's outputs (owned by the container's root
