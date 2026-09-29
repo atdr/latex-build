@@ -1,5 +1,17 @@
 # Changelog
 
+## [1.1.0](https://github.com/atdr/latex-build/compare/v1.0.0...v1.1.0) (2026-09-29)
+
+
+### Features
+
+* publish a moving major version tag for callers ([#5](https://github.com/atdr/latex-build/issues/5)) ([30348ee](https://github.com/atdr/latex-build/commit/30348eef7052e4b67d220729ef0a6c56f847c1b5))
+
+
+### Bug Fixes
+
+* fetch scripts at the workflow's own commit ([#6](https://github.com/atdr/latex-build/issues/6)) ([8dc1680](https://github.com/atdr/latex-build/commit/8dc16801c1fa894863cb4da90b2b4648ad6e2297))
+
 ## 1.0.0 (2026-09-29)
 
 
