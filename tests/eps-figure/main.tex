@@ -1,0 +1,11 @@
+% XeLaTeX with an EPS figure, which xdvipdfmx converts to PDF through
+% Ghostscript; without gs on the runner the figure is dropped and
+% xdvipdfmx fails with "pdf_ref_obj(): passed invalid object".
+\documentclass{article}
+\usepackage{graphicx}
+\begin{document}
+An EPS figure:
+
+% Paths are relative to the repository root, where latexmk runs
+\includegraphics{tests/eps-figure/figure.eps}
+\end{document}

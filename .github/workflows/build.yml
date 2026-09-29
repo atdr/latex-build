@@ -62,7 +62,7 @@ env:
   ENGINE: ${{ inputs.engine }}
   PACKAGE_LIST: ${{ inputs.package_list }}
   VERSION: ${{ inputs.texlive_version_override || inputs.texlive_version }}
-  # Installed by install-system-fonts.sh on the runner; mounted read-only
+  # Installed by install-system-packages.sh on the runner; mounted read-only
   # into the full TeX Live image, which cannot install them itself
   SYSTEM_FONT_DIRS: >-
     /usr/share/fonts/truetype/msttcorefonts
@@ -120,10 +120,10 @@ jobs:
           package_file: ${{ inputs.package_list }}
           texlive_version: ${{ steps.texlive.outputs.version }}
           repository: ${{ steps.texlive.outputs.repository }}
-      - name: Set up fonts
+      - name: Set up system packages and fonts
         if: ${{ !steps.check.outputs.update_packages }}
         run: |
-          "$LATEX_BUILD/scripts/install-system-fonts.sh"
+          "$LATEX_BUILD/scripts/install-system-packages.sh"
           "$LATEX_BUILD/scripts/setup-fonts.sh"
       - name: Compile LaTeX document
         id: compile
@@ -190,10 +190,10 @@ jobs:
         env:
           REF: ${{ inputs.build_ref || job.workflow_sha }}
         run: *fetch
-      - name: Install system fonts
-        # On the runner, where the packages are available; mounted into the
-        # full TeX Live image below
-        run: '"$LATEX_BUILD/scripts/install-system-fonts.sh"'
+      - name: Install system packages
+        # On the runner, where the packages are available; the fonts are
+        # mounted into the full TeX Live image below, which has Ghostscript
+        run: '"$LATEX_BUILD/scripts/install-system-packages.sh"'
       - name: List packages the document uses
         # Downloads all of TeX Live (~2 min); a generous timeout in case the
         # compile hangs instead of erroring

@@ -19,6 +19,7 @@ jobs:
           - {name: fonts, engine: -xelatex}
           - {name: latex-error, engine: -xelatex}
           - {name: bibtex-no-citations, engine: -pdf}
+          - {name: eps-figure, engine: -xelatex}
         texlive_version: ["2016", latest]
     uses: ./.github/workflows/build.yml
     permissions:

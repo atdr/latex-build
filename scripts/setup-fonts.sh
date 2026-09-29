@@ -6,7 +6,7 @@
 #
 # Run after TeX Live is installed and on PATH, both on the runner (via sudo)
 # and as root inside the full TeX Live image. Microsoft's core fonts come
-# from install-system-fonts.sh instead.
+# from install-system-packages.sh instead.
 #
 # Only the OpenType and TrueType trees: many fonts (FontAwesome, Lato,
 # Source Code Pro) also ship as Type 1, and with the type1 tree registered
