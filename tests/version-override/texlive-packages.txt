@@ -1,0 +1,4 @@
+# Fixture for the version-override test: a committed list that a run with
+# texlive_version_override must ignore. This package does not exist, so the
+# test fails if the list is installed.
+no-such-package-latex-build-test

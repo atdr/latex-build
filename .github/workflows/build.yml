@@ -155,8 +155,13 @@ jobs:
         id: check
         env:
           UPDATE: ${{ inputs.update_packages }}
+          OVERRIDE: ${{ inputs.texlive_version_override }}
+          CONFIGURED: ${{ inputs.texlive_version }}
         run: |
-          if [ "$UPDATE" = true ] || [ ! -f "$PACKAGE_LIST" ]; then
+          # The committed list is for texlive_version; package names differ
+          # between releases, so another version needs its own list
+          if [ "$UPDATE" = true ] || [ ! -f "$PACKAGE_LIST" ] || {
+            [ -n "$OVERRIDE" ] && [ "$OVERRIDE" != "$CONFIGURED" ]; }; then
             echo "update_packages=true" >> "$GITHUB_OUTPUT"
           fi
       - name: Select TeX Live release

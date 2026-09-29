@@ -41,7 +41,7 @@ Inputs (see `build.yml` for all of them):
 - `texlive_version`: TeX Live release year as a string (e.g. `"2017"`), or `latest`. A past year installs from its frozen `tlnet-final` archive on the Utah historic mirror (and the full-install job uses its `TL<year>-historic` image); the current year has neither yet, so it installs from the mirrors like `latest`.
 - `lint`, `annotate_warnings` and `fail_on_warnings` (all off by default): report chktex findings (annotated on their file and line) and the final LaTeX log's warnings (undefined references and citations, overfull boxes, missing characters, font and package warnings; annotated on the run) in the job summary. `fail_on_warnings` then fails the job after the PDF is published. The count is the workflow's `warnings` output.
 - `format_check` and `tex_fmt_version`: check in a separate `format` job that the tracked `.tex`, `.cls` and `.sty` files under the root file's directory are formatted as [tex-fmt](https://github.com/WGUNDERWOOD/tex-fmt) would format them (with the repository's `tex-fmt.toml`, if any). The job fails when one is not; the PDF is built and published regardless.
-- `texlive_version_override` and `update_packages`: pass through the caller's manual-run inputs. A run with another TeX Live version never commits the package list.
+- `texlive_version_override` and `update_packages`: pass through the caller's manual-run inputs. A run with another TeX Live version regenerates the package list for that version (package names differ between releases), and never commits it.
 
 Callers use the major version tag (`@v1`), which the release workflow moves to each new `v1.x.y` release, so fixes reach every document without a change there. Dependabot (`package-ecosystem: github-actions`) in each caller opens a PR when a new major version is released. An exact tag (`@v1.2.3`) also works, to freeze a document's build.
 
@@ -54,7 +54,7 @@ A called workflow cannot use `./` paths into its own repository: those resolve i
 Each run has two jobs in sequence:
 
 1. **`build_latex`** (about 10 s once the install is cached)
-   - If the package list is missing or `update_packages` is set, it skips compiling and flags `update_packages`.
+   - If the package list is missing, `update_packages` is set, or the run overrides the TeX Live version, it skips compiling and flags `update_packages`.
    - Otherwise it installs the listed packages (`zauguin/install-texlive`, cached per list and release), sets up fonts and compiles:
      - success: publishes the PDF;
      - a missing file that a TeX Live package provides: flags `update_packages`;
