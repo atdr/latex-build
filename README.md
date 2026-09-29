@@ -55,4 +55,6 @@ updates:
 
 The first run generates `texlive-packages.txt` and commits it. Each build on the default branch is published as a release tagged `build-<short SHA>` with the PDF attached.
 
+Set `lint: true` and `annotate_warnings: true` to have chktex findings and LaTeX log warnings (undefined references, overfull boxes and the like) reported as annotations and in the job summary.
+
 See [AGENTS.md](AGENTS.md) for the inputs, the build flow and how the package list is generated.

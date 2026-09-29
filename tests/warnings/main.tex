@@ -1,0 +1,11 @@
+% A document that compiles cleanly but has problems lint and
+% annotate_warnings must report: an undefined reference and an overfull
+% line in the log, and a command terminated with a space for chktex.
+\documentclass{article}
+\begin{document}
+See section~\ref{sec:missing}.
+
+\LaTeX is followed by a space that TeX swallows.
+
+\noindent\rule{1.2\textwidth}{1pt}
+\end{document}

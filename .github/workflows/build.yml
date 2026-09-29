@@ -52,6 +52,25 @@ on:
           tests; Overleaf publishes it)
         type: boolean
         default: false
+      lint:
+        description: >-
+          Run chktex on the root file and the files it inputs, reporting its
+          findings as annotations on those lines
+        type: boolean
+        default: false
+      annotate_warnings:
+        description: >-
+          Report the warnings in the final LaTeX log (undefined references,
+          overfull boxes, missing characters, package warnings) as
+          annotations
+        type: boolean
+        default: false
+      fail_on_warnings:
+        description: >-
+          Fail the job when lint or annotate_warnings found anything; the PDF
+          is still published first
+        type: boolean
+        default: false
       artifact_suffix:
         description: Appended to artifact names, to keep them unique
         type: string
@@ -62,12 +81,22 @@ on:
           commit this workflow was called at
         type: string
         default: ""
+    outputs:
+      warnings:
+        description: >-
+          Number of findings from lint and annotate_warnings (empty when
+          neither is enabled)
+        value: >-
+          ${{ jobs.update_packages.outputs.warnings
+          || jobs.build_latex.outputs.warnings }}
 
 env:
   ROOT_FILE: ${{ inputs.root_file }}
   ENGINE: ${{ inputs.engine }}
   PACKAGE_LIST: ${{ inputs.package_list }}
   VERSION: ${{ inputs.texlive_version_override || inputs.texlive_version }}
+  LINT: ${{ inputs.lint }}
+  ANNOTATE_WARNINGS: ${{ inputs.annotate_warnings }}
   # Installed by install-system-packages.sh on the runner; mounted read-only
   # into the full TeX Live image, which cannot install them itself
   SYSTEM_FONT_DIRS: >-
@@ -87,6 +116,7 @@ jobs:
       update_packages: >-
         ${{ steps.check.outputs.update_packages
         || steps.compile.outputs.missing_packages }}
+      warnings: ${{ steps.quality.outputs.warnings }}
 
     steps:
       - name: Set up Git repository
@@ -146,6 +176,12 @@ jobs:
           || (inputs.fail_on_errors
           && steps.compile.outputs.compiled_with_errors) }}
         run: exit 1
+      - name: Check document
+        id: quality
+        if: >-
+          ${{ steps.compile.outcome == 'success'
+          && (inputs.lint || inputs.annotate_warnings) }}
+        run: '"$LATEX_BUILD/scripts/check-quality.sh"'
       - name: Publish PDF as release
         # Releases are not subject to the artifact retention period
         if: >-
@@ -177,12 +213,22 @@ jobs:
         with:
           name: run-log${{ inputs.artifact_suffix }}
           path: "*.log"
+      - name: Fail on warnings
+        # After publishing, so the PDF is still available
+        if: >-
+          ${{ inputs.fail_on_warnings
+          && steps.quality.outputs.warnings != '0'
+          && steps.quality.outputs.warnings != '' }}
+        run: exit 1
 
   update_packages:
     needs: build_latex
     if: ${{ needs.build_latex.outputs.update_packages }}
 
     runs-on: ubuntu-latest
+
+    outputs:
+      warnings: ${{ steps.quality.outputs.warnings }}
 
     # Needed to commit the package list, and to create tags and releases
     permissions:
@@ -249,6 +295,10 @@ jobs:
           ${{ inputs.fail_on_errors
           && steps.compile.outputs.compiled_with_errors }}
         run: exit 1
+      - name: Check document
+        id: quality
+        if: ${{ inputs.lint || inputs.annotate_warnings }}
+        run: '"$LATEX_BUILD/scripts/check-quality.sh"'
       - name: Commit package list
         # Only reached if the document compiled with exactly the listed
         # packages. A run with another TeX Live version does not commit, so
@@ -292,3 +342,10 @@ jobs:
         with:
           name: run-log${{ inputs.artifact_suffix }}
           path: "*.log"
+      - name: Fail on warnings
+        # After publishing, so the PDF is still available
+        if: >-
+          ${{ inputs.fail_on_warnings
+          && steps.quality.outputs.warnings != '0'
+          && steps.quality.outputs.warnings != '' }}
+        run: exit 1
