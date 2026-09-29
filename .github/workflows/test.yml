@@ -88,3 +88,20 @@ jobs:
             echo "::error::check-format.sh passed an unformatted document"
             exit 1
           fi
+
+  # A manual run on another TeX Live version must not install the committed
+  # list, which is for texlive_version; this one names a package that does
+  # not exist, so installing it would fail
+  version-override:
+    uses: ./.github/workflows/build.yml
+    permissions:
+      contents: write
+    with:
+      root_file: tests/bibtex-no-citations/main.tex
+      engine: -pdf
+      texlive_version: "2016"
+      texlive_version_override: latest
+      package_list: tests/version-override/texlive-packages.txt
+      commit_package_list: false
+      publish_release: false
+      artifact_suffix: -version-override
