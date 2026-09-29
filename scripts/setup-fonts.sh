@@ -7,6 +7,11 @@
 # Run after TeX Live is installed and on PATH, both on the runner (via sudo)
 # and as root inside the full TeX Live image. Microsoft's core fonts come
 # from install-system-fonts.sh instead.
+#
+# Only the OpenType and TrueType trees: many fonts (FontAwesome, Lato,
+# Source Code Pro) also ship as Type 1, and with the type1 tree registered
+# XeTeX may pick the .pfb by name, which xdvipdfmx cannot embed
+# ("pdf_ref_obj(): passed invalid object").
 set -euo pipefail
 
 sudo=""
@@ -20,7 +25,6 @@ $sudo tee /etc/fonts/conf.d/09-texlive.conf > /dev/null <<EOF
 <fontconfig>
   <dir>$root/texmf-dist/fonts/opentype</dir>
   <dir>$root/texmf-dist/fonts/truetype</dir>
-  <dir>$root/texmf-dist/fonts/type1</dir>
 </fontconfig>
 EOF
 # Without fc-cache, fontconfig scans the directories on first use instead
