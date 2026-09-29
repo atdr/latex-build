@@ -34,6 +34,8 @@ jobs:
       publish_release: false
       # Documents that must compile cleanly fail on any error
       fail_on_errors: ${{ matrix.document.strict }}
+      # Every test document except tests/format is formatted with tex-fmt
+      format_check: true
       artifact_suffix: >-
         -${{ matrix.document.name }}-${{ matrix.texlive_version }}
 
@@ -69,3 +71,20 @@ jobs:
         run: |
           echo "Reported $WARNINGS warning(s)"
           [ "${WARNINGS:-0}" -ge 3 ]
+
+  # tests/format is deliberately not formatted, so the check must fail on it
+  format_fails:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Set up Git repository
+        uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - name: Check that an unformatted document fails
+        env:
+          ROOT_FILE: tests/format/main.tex
+        run: |
+          if scripts/check-format.sh; then
+            echo "::error::check-format.sh passed an unformatted document"
+            exit 1
+          fi
