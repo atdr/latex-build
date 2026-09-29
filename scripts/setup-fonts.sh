@@ -6,7 +6,7 @@
 #
 # Run after TeX Live is installed and on PATH, both on the runner (via sudo)
 # and as root inside the full TeX Live image. Microsoft's core fonts come
-# from install-ms-fonts.sh instead.
+# from install-system-fonts.sh instead.
 set -euo pipefail
 
 sudo=""
