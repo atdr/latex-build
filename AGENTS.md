@@ -22,7 +22,7 @@ A reusable GitHub Actions workflow that compiles a repository's LaTeX document t
 ```yaml
 jobs:
   build:
-    uses: atdr/latex-build/.github/workflows/build.yml@v1.0.0 # x-release-please-version
+    uses: atdr/latex-build/.github/workflows/build.yml@v1
     permissions:
       contents: write
     with:
@@ -38,11 +38,11 @@ Inputs (see `build.yml` for all of them):
 - `texlive_version`: TeX Live release year as a string (e.g. `"2017"`), or `latest`. A past year installs from its frozen `tlnet-final` archive on the Utah historic mirror (and the full-install job uses its `TL<year>-historic` image); the current year has neither yet, so it installs from the mirrors like `latest`.
 - `texlive_version_override` and `update_packages`: pass through the caller's manual-run inputs. A run with another TeX Live version never commits the package list.
 
-Callers pin an exact version (`@v1.0.0`), and Dependabot (`package-ecosystem: github-actions`) opens a PR in each caller for every new release.
+Callers use the major version tag (`@v1`), which the release workflow moves to each new `v1.x.y` release, so fixes reach every document without a change there. Dependabot (`package-ecosystem: github-actions`) in each caller opens a PR when a new major version is released. An exact tag (`@v1.2.3`) also works, to freeze a document's build.
 
 ### Where the scripts come from
 
-A called workflow cannot use `./` paths into its own repository: those resolve in the caller's checkout. So each job fetches this repository at `build_ref` into `$RUNNER_TEMP/latex-build` (outside the workspace, where `git clean` and the build cannot touch it) and runs the scripts from there. `build_ref` defaults to the workflow's own release tag; release-please keeps that default in step with each release (the `x-release-please-version` comment). Only the tests override it, to run the commit under test.
+A called workflow cannot use `./` paths into its own repository: those resolve in the caller's checkout. So each job fetches this repository at `build_ref` into `$RUNNER_TEMP/latex-build` (outside the workspace, where `git clean` and the build cannot touch it) and runs the scripts from there. `build_ref` defaults to the workflow's own exact release tag (so `@v1` still fetches the scripts of the release it points at); release-please keeps that default in step with each release (the `x-release-please-version` comment). Only the tests override it, to run the commit under test.
 
 ## Build flow
 
@@ -77,7 +77,8 @@ The list is rewritten from scratch, so unused packages are dropped as well as mi
 ## Changing things
 
 - **Test in Actions:** there is no local equivalent of the runner. Push a branch and open a PR; `test.yml` builds every test document on TeX Live 2016 and latest, since installers, latexmk and log formats differ between years. Add a test document for any new failure mode.
-- **Releases:** merge to `main` with Conventional Commit messages; release-please opens a release PR, and merging it tags `vX.Y.Z` and updates `build_ref`'s default in the same commit. Do not hand-edit `CHANGELOG.md`, `version.txt` or the version on the `build_ref` line.
+- **Releases:** merge to `main` with Conventional Commit messages; release-please opens a release PR, and merging it tags `vX.Y.Z`, moves `vX` to it and updates `build_ref`'s default in the same commit. Do not hand-edit `CHANGELOG.md` or the version on the `build_ref` line, and do not move `vX` by hand. Every `fix:` or `feat:` merged to `main` reaches all callers on the next release, so keep changes that callers do not see as `ci:`, `test:`, `docs:` or `chore:`.
+- **Dependabot PRs** are titled `fix:`, since most bump actions that `build.yml` runs in callers. When one only touches `release-please.yml` or `test.yml`, squash-merge it with a `ci:` subject instead, so it does not cut a release.
 - **Breaking changes** (a renamed or removed input, a changed default): mark the commit `feat!:` or add `BREAKING CHANGE:` to its body, so callers get a major version.
 
 ## Conventions

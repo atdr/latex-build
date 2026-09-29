@@ -8,14 +8,6 @@
         {
           "type": "generic",
           "path": ".github/workflows/build.yml"
-        },
-        {
-          "type": "generic",
-          "path": "README.md"
-        },
-        {
-          "type": "generic",
-          "path": "AGENTS.md"
         }
       ]
     }
