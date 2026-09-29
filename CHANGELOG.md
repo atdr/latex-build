@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.1.1](https://github.com/atdr/latex-build/compare/v1.1.0...v1.1.1) (2026-09-29)
+
+
+### Bug Fixes
+
+* provide Ubuntu's Inconsolata, as Overleaf does ([#8](https://github.com/atdr/latex-build/issues/8)) ([fc692bd](https://github.com/atdr/latex-build/commit/fc692bd36b816187663594f86fe4fe590012d23f))
+
 ## [1.1.0](https://github.com/atdr/latex-build/compare/v1.0.0...v1.1.0) (2026-09-29)
 
 
