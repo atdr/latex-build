@@ -12,6 +12,7 @@ A reusable GitHub Actions workflow that compiles a repository's LaTeX document t
 | `scripts/setup-fonts.sh` | Registers TeX Live's own fonts with fontconfig, so `fontspec` can load them by name |
 | `scripts/setup-rungs.sh` | Replaces TeX Live's `rungs` with one that runs `gs`, for EPS figures |
 | `scripts/compile.sh` | Compiles; names the TeX Live package providing each missing file, or publishes anyway if a PDF still came out |
+| `scripts/check-quality.sh` | With `lint` or `annotate_warnings`, reports chktex findings and the final log's warnings as annotations and in the job summary |
 | `scripts/list-packages.sh` | Runs in a full TeX Live image; rewrites the package list from what the build used |
 | `scripts/publish-release.sh` | Attaches the PDF to a `build-<short SHA>` release |
 | `tests/` | Test documents, one per failure mode seen in real projects |
@@ -37,6 +38,7 @@ Inputs (see `build.yml` for all of them):
 - `root_file`: root `.tex` file. It may be in a subdirectory; latexmk still runs from the repository root, as Overleaf does, and writes its outputs (log, PDF) there.
 - `engine`: latexmk engine flag: `-pdf` (pdfLaTeX, Overleaf's default), `-xelatex` or `-lualatex`. It overrides any `.latexmkrc`.
 - `texlive_version`: TeX Live release year as a string (e.g. `"2017"`), or `latest`. A past year installs from its frozen `tlnet-final` archive on the Utah historic mirror (and the full-install job uses its `TL<year>-historic` image); the current year has neither yet, so it installs from the mirrors like `latest`.
+- `lint`, `annotate_warnings` and `fail_on_warnings` (all off by default): report chktex findings (annotated on their file and line) and the final LaTeX log's warnings (undefined references and citations, overfull boxes, missing characters, font and package warnings; annotated on the run) in the job summary. `fail_on_warnings` then fails the job after the PDF is published. The count is the workflow's `warnings` output.
 - `texlive_version_override` and `update_packages`: pass through the caller's manual-run inputs. A run with another TeX Live version never commits the package list.
 
 Callers use the major version tag (`@v1`), which the release workflow moves to each new `v1.x.y` release, so fixes reach every document without a change there. Dependabot (`package-ecosystem: github-actions`) in each caller opens a PR when a new major version is released. An exact tag (`@v1.2.3`) also works, to freeze a document's build.
@@ -61,6 +63,7 @@ Each run has two jobs in sequence:
    - deletes that build's outputs, installs only the new list and compiles again, which verifies the list;
    - commits the list if it changed (not on runs with another TeX Live version, nor for a tag, nor when `commit_package_list` is false), then publishes the PDF.
 
+- **Checks:** with `lint` or `annotate_warnings`, whichever job compiled last runs `check-quality.sh` after compiling, then publishes as usual; "Fail on warnings" is the job's last step.
 - **Publishing:** on the default branch the PDF is attached to a release tagged `build-<short SHA>`, which does not expire. Rebuilding the same commit replaces the PDF and updates the notes. On other branches, or with `publish_release: false`, the PDF is uploaded as the `pdf` artifact of the run. When a build fails or compiles with errors, its `.log` files are uploaded as the `run-log` artifact.
 - **Workflow commits:** the list commit is made with the caller's `GITHUB_TOKEN`, so it does not trigger another run. The run that made it has already built and published the PDF with that list.
 
@@ -106,4 +109,6 @@ These already caused failures; keep them in mind when changing the scripts:
 - **EPS figures:** xdvipdfmx converts them by running TeX Live's `rungs`, which runs the system `gs`. The runner has no Ghostscript, so `install-system-packages.sh` installs `ghostscript`. The generated package list does not cover `rungs` either (it records the programs latexmk runs, not those xdvipdfmx starts): TeX Live 2016 then has no `rungs`, and recent releases have the launcher without its script. `setup-rungs.sh` therefore writes a `rungs` that runs `gs` into TeX Live's bin directory, as TeX Live's own does on Unix. Without all this the figure is dropped and xdvipdfmx fails with `pdf_ref_obj(): passed invalid object` (or `pdf_link_obj()`). The full TeX Live image has both.
 - **Tests that must compile cleanly** set `fail_on_errors`, since the Overleaf-style tolerance would otherwise publish a PDF that is missing a figure and still pass.
 - **Executable bit:** the workflow runs each script directly, so every file in `scripts/` must be committed as `100755` (`git ls-files -s scripts`).
+- **chktex is not in the package list:** `check-quality.sh` installs it with `tlmgr` when `lint` is on, after the list has been used, so linting never changes the list a document commits.
+- **Log warnings have no file:** TeX's log names a warning's input line but not reliably its file (that needs tracking the log's parentheses), so log warnings are annotated on the run, not on a file. Underfull boxes are left out: nearly every document has some, and they would drown the rest.
 - **A hung compile:** the compile and package-listing steps have a `timeout-minutes` well above their normal duration, so a compile that hangs (rather than erroring) fails the job instead of running until the runner's own limit.
