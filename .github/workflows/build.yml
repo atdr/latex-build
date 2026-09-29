@@ -71,6 +71,20 @@ on:
           is still published first
         type: boolean
         default: false
+      format_check:
+        description: >-
+          Check, in a separate job, that the .tex, .cls and .sty files under
+          the root file's directory are formatted with tex-fmt; fails that
+          job, not the build, when one is not
+        type: boolean
+        default: false
+      tex_fmt_version:
+        description: >-
+          tex-fmt release for format_check (e.g. "0.5.7"); match the rev of
+          the document's pre-commit hook. Empty uses the version
+          check-format.sh pins
+        type: string
+        default: ""
       artifact_suffix:
         description: Appended to artifact names, to keep them unique
         type: string
@@ -349,3 +363,22 @@ jobs:
           && steps.quality.outputs.warnings != '0'
           && steps.quality.outputs.warnings != '' }}
         run: exit 1
+
+  format:
+    if: ${{ inputs.format_check }}
+
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Set up Git repository
+        uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - name: Fetch build scripts
+        env:
+          REF: ${{ inputs.build_ref || job.workflow_sha }}
+        run: *fetch
+      - name: Check formatting
+        env:
+          TEX_FMT_VERSION: ${{ inputs.tex_fmt_version }}
+        run: '"$LATEX_BUILD/scripts/check-format.sh"'

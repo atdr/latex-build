@@ -57,4 +57,6 @@ The first run generates `texlive-packages.txt` and commits it. Each build on the
 
 Set `lint: true` and `annotate_warnings: true` to have chktex findings and LaTeX log warnings (undefined references, overfull boxes and the like) reported as annotations and in the job summary.
 
+Set `format_check: true` to check, in a separate job, that the document is formatted with [tex-fmt](https://github.com/WGUNDERWOOD/tex-fmt); pair it with tex-fmt's pre-commit hook so files are formatted before they are pushed.
+
 See [AGENTS.md](AGENTS.md) for the inputs, the build flow and how the package list is generated.
