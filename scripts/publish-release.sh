@@ -15,13 +15,21 @@ if [ -n "${WARNING:-}" ]; then
   notes="$notes"$'\n\n'"⚠️ $WARNING"
 fi
 
-if gh release view "$tag" > /dev/null 2>&1; then
-  # Rebuild of the same commit (e.g. with another TeX Live version)
+update() {
   gh release upload "$tag" "$pdf" --clobber
   gh release edit "$tag" --notes "$notes"
-else
-  gh release create "$tag" "$pdf" \
-    --target "$SHA" \
-    --title "Build $short ($(git log -1 --format=%cs "$SHA"))" \
-    --notes "$notes"
+}
+
+if gh release view "$tag" > /dev/null 2>&1; then
+  # Rebuild of the same commit (e.g. with another TeX Live version)
+  update
+elif ! gh release create "$tag" "$pdf" \
+  --target "$SHA" \
+  --title "Build $short ($(git log -1 --format=%cs "$SHA"))" \
+  --notes "$notes"; then
+  # Two runs on one commit (a push and a manual run, which callers queue
+  # apart) can both find no release; the second create then fails. Update
+  # the release the other run made rather than failing the build.
+  gh release view "$tag" > /dev/null 2>&1 || exit 1
+  update
 fi
