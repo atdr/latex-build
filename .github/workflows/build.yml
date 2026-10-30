@@ -336,8 +336,34 @@ jobs:
           git config user.name "$bot"
           git config user.email "41898282+$bot@users.noreply.github.com"
           git commit -m "chore: update TeX Live package list"
-          remote="https://x-access-token:${GH_TOKEN}@github.com"
-          git push "$remote/${GITHUB_REPOSITORY}.git" "HEAD:${GITHUB_REF_NAME}"
+          remote="https://x-access-token:${GH_TOKEN}@github.com/${GITHUB_REPOSITORY}.git"
+          warn() { echo "::warning title=Package list not committed::$1"; }
+          # A rejected push means the branch moved during the build: a commit
+          # pushed meanwhile, or another run's package list (a manual
+          # update_packages run and a push run can overlap). Saving the list
+          # must not stop the PDF publishing, so every way out below is a
+          # warning, never a failure.
+          for _ in 1 2 3; do
+            git push "$remote" "HEAD:${GITHUB_REF_NAME}" && exit 0
+            git fetch --quiet "$remote" "$GITHUB_REF_NAME" || {
+              warn "Could not fetch ${GITHUB_REF_NAME} to replay the package list commit."
+              exit 0
+            }
+            # Compared with the list this commit started from, not merged:
+            # two different lists can merge cleanly into one neither run
+            # compiled with. A list changed upstream is kept as it is.
+            if ! git diff --quiet HEAD~1 FETCH_HEAD -- "$PACKAGE_LIST"; then
+              warn "${GITHUB_REF_NAME} gained its own ${PACKAGE_LIST} change during this build, so that one is kept. Run with update_packages if it is missing a package."
+              exit 0
+            fi
+            # Upstream left the list alone, so this replays cleanly.
+            git rebase --quiet FETCH_HEAD || {
+              git rebase --abort
+              warn "Could not replay the package list commit onto ${GITHUB_REF_NAME}."
+              exit 0
+            }
+          done
+          warn "${GITHUB_REF_NAME} kept moving; gave up pushing the package list after 3 tries."
       - name: Publish PDF as release
         if: >-
           ${{ inputs.publish_release
