@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.2.2](https://github.com/atdr/latex-build/compare/v1.2.1...v1.2.2) (2026-10-31)
+
+
+### Bug Fixes
+
+* replay the package list commit when the branch moved during the build ([#23](https://github.com/atdr/latex-build/issues/23)) ([697e13e](https://github.com/atdr/latex-build/commit/697e13e91b8634c596dbcb42e893da4255f9a4d6))
+
 ## [1.2.1](https://github.com/atdr/latex-build/compare/v1.2.0...v1.2.1) (2026-10-30)
 
 
