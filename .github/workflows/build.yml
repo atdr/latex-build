@@ -357,8 +357,10 @@ jobs:
               exit 0
             fi
             # Upstream left the list alone, so this replays cleanly.
+            # A rebase that never started (a dirty tracked build output, say)
+            # has nothing to abort, so the abort is best effort.
             git rebase --quiet FETCH_HEAD || {
-              git rebase --abort
+              git rebase --abort 2>/dev/null || true
               warn "Could not replay the package list commit onto ${GITHUB_REF_NAME}."
               exit 0
             }
