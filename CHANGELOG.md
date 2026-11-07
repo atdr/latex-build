@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.3.0](https://github.com/atdr/latex-build/compare/v1.2.2...v1.3.0) (2026-11-07)
+
+
+### Features
+
+* push the package list to a new branch where the branch is protected ([#25](https://github.com/atdr/latex-build/issues/25)) ([5554edd](https://github.com/atdr/latex-build/commit/5554edd4e9e1768da8115e749c48a103f06dd7c5))
+
 ## [1.2.2](https://github.com/atdr/latex-build/compare/v1.2.1...v1.2.2) (2026-10-31)
 
 
