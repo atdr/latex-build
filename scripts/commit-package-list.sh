@@ -37,9 +37,14 @@ refused_by_rule() {
   grep -E 'GH013|GH006' "$err" > /dev/null
 }
 
-# A new branch for each run attempt, so a rerun never collides with the last.
+# A new branch for each run attempt, so a rerun never collides with the last,
+# and for each package list: a caller that builds several documents calls this
+# workflow once per document, all within one run, and each list needs a branch
+# of its own.
 push_to_new_branch() {
-  local branch="chore/update-texlive-packages-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
+  local list
+  list=$(printf '%s' "$PACKAGE_LIST" | git hash-object --stdin | cut -c1-7)
+  local branch="chore/update-texlive-packages-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}-$list"
   if ! push "HEAD:refs/heads/$branch"; then
     warn "${GITHUB_REF_NAME} does not accept direct pushes, and pushing the package list to a new branch, $branch, failed too."
     return
