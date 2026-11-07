@@ -15,6 +15,7 @@ A reusable GitHub Actions workflow that compiles a repository's LaTeX document t
 | `scripts/check-quality.sh` | With `lint` or `annotate_warnings`, reports chktex findings and the final log's warnings as annotations and in the job summary |
 | `scripts/check-format.sh` | With `format_check`, checks the document's `.tex`, `.cls` and `.sty` files against tex-fmt, annotating and printing the diff |
 | `scripts/list-packages.sh` | Runs in a full TeX Live image; rewrites the package list from what the build used |
+| `scripts/commit-package-list.sh` | Commits a changed package list and pushes it: replayed onto a branch that moved during the build, or sent to a new branch where the branch refuses direct pushes |
 | `scripts/publish-release.sh` | Attaches the PDF to a `build-<short SHA>` release |
 | `tests/` | Test documents, one per failure mode seen in real projects; `tests/format` is deliberately not formatted |
 | `.github/workflows/test.yml` | Builds every test document on TeX Live 2016 and latest |
@@ -68,6 +69,7 @@ Each run has two jobs in sequence:
 - **Checks:** with `lint` or `annotate_warnings`, whichever job compiled last runs `check-quality.sh` after compiling, then publishes as usual; "Fail on warnings" is the job's last step.
 - **Publishing:** on the default branch the PDF is attached to a release tagged `build-<short SHA>`, which does not expire. Rebuilding the same commit replaces the PDF and updates the notes. On other branches, or with `publish_release: false`, the PDF is uploaded as the `pdf` artifact of the run. When a build fails or compiles with errors, its `.log` files are uploaded as the `run-log` artifact.
 - **Workflow commits:** the list commit is made with the caller's `GITHUB_TOKEN`, so it does not trigger another run. The run that made it has already built and published the PDF with that list.
+- **Protected branches:** where a ruleset or branch protection refuses direct pushes (GitHub's `GH013` or `GH006` in the push output), the commit goes to a new branch, `chore/update-texlive-packages-<run id>-<attempt>-<hash>`, where the hash (of the package list's path) keeps apart the lists of a caller that builds several documents in one run, and the run warns, with a link to open the pull request in the job summary. It does not open the pull request itself: that needs the caller's "Allow GitHub Actions to create pull requests" setting, which many leave off. A push made with `GITHUB_TOKEN` starts no workflow, so the new branch builds nothing until the pull request is opened.
 
 ## How the package list is generated
 
