@@ -72,6 +72,8 @@ Run the workflow manually (Actions tab → the workflow → Run workflow) with i
 
 A manual run also drops packages the document no longer uses; automatic regeneration only happens on a failure, so they otherwise stay listed.
 
+Where the branch does not accept direct pushes (a ruleset or branch protection requiring pull requests, as `main` often does), the new list is pushed to a new branch instead, and the run's summary links to open the pull request that merges it.
+
 
 Set `lint: true` and `annotate_warnings: true` to have chktex findings and LaTeX log warnings (undefined references, overfull boxes and the like) reported as annotations and in the job summary.
 
