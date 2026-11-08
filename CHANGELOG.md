@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.3.1](https://github.com/atdr/latex-build/compare/v1.3.0...v1.3.1) (2026-11-08)
+
+
+### Bug Fixes
+
+* bound each build job's runtime and read-only token by default ([#27](https://github.com/atdr/latex-build/issues/27)) ([3b137f9](https://github.com/atdr/latex-build/commit/3b137f9c237b125ca41849f2e9782edb8bbdcad8))
+
 ## [1.3.0](https://github.com/atdr/latex-build/compare/v1.2.2...v1.3.0) (2026-11-07)
 
 
