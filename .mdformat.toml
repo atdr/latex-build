@@ -1,5 +1,7 @@
 # Needs Python 3.13 or later: `exclude` errors below it.
-wrap = 80
+# Prose stays one line per paragraph, as AGENTS.md asks; mdformat only pads
+# tables and normalises whitespace.
+wrap = "keep"
 number = true
 exclude = [
   "CHANGELOG.md",

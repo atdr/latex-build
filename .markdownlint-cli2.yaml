@@ -2,12 +2,9 @@ gitignore: true
 globs:
   - '**/*.md'
 config:
-  # 80 columns for prose. Tables and code blocks are exempt: wrapping either
-  # breaks it. mdformat (.mdformat.toml) rewraps paragraphs to the same width.
-  MD013:
-    line_length: 80
-    tables: false
-    code_blocks: false
+  # Off: prose here is not hard-wrapped, one line per paragraph or list item
+  # (see AGENTS.md), and the rule has no setting that exempts prose alone.
+  MD013: false
   MD046:
     style: fenced
   # mdformat writes every real heading as `# text`, and its rewrap can start a
