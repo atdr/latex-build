@@ -2,7 +2,7 @@
 
 [![GitHub release](https://img.shields.io/github/v/release/atdr/latex-build?style=flat-square&label=release)](https://github.com/atdr/latex-build/releases)
 [![GitHub last commit](https://img.shields.io/github/last-commit/atdr/latex-build.svg?style=flat-square)](https://github.com/atdr/latex-build)
-[![Test](https://img.shields.io/github/actions/workflow/status/atdr/latex-build/test.yml?branch=main&style=flat-square&label=test)](https://github.com/atdr/latex-build/actions/workflows/test.yml)
+[![CI](https://img.shields.io/github/actions/workflow/status/atdr/latex-build/ci.yml?branch=main&style=flat-square&label=ci)](https://github.com/atdr/latex-build/actions/workflows/ci.yml)
 
 A reusable GitHub Actions workflow that compiles a LaTeX document to PDF on every push and publishes it as a GitHub release, much as Overleaf would build it.
 
@@ -17,7 +17,7 @@ To start a new document, use the [`atdr/latex-boilerplate`](https://github.com/a
 Add `.github/workflows/compile.yml` to the document's repository:
 
 ```yaml
-name: Build LaTeX document
+name: compile
 
 on:
   push:
@@ -73,7 +73,6 @@ Run the workflow manually (Actions tab → the workflow → Run workflow) with i
 A manual run also drops packages the document no longer uses; automatic regeneration only happens on a failure, so they otherwise stay listed.
 
 Where the branch does not accept direct pushes (a ruleset or branch protection requiring pull requests, as `main` often does), the new list is pushed to a new branch instead, and the run's summary links to open the pull request that merges it.
-
 
 Set `lint: true` and `annotate_warnings: true` to have chktex findings and LaTeX log warnings (undefined references, overfull boxes and the like) reported as annotations and in the job summary.
 

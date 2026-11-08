@@ -1,0 +1,56 @@
+name: Bug report
+description: A document fails to build, or builds wrongly, with latex-build
+labels: ['bug']
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for taking the time to report this.
+
+        Please write in plain English: short sentences, everyday words, and exactly what you saw. There is no need to write it up formally.
+
+        **Do not paste secrets** (API keys, tokens, private URLs). Describe what is configured, not its values.
+
+  - type: checkboxes
+    id: preflight
+    attributes:
+      label: Before reporting
+      options:
+        - label: I searched the existing issues for this problem
+          required: true
+        - label: My workflow calls `@v1`, or the latest exact tag
+          required: true
+
+  - type: textarea
+    id: version
+    attributes:
+      label: Caller workflow
+      description: The `uses:` line and the `with:` inputs from your workflow (root_file, engine, texlive_version and any others you set).
+      render: yaml
+    validations:
+      required: true
+
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened
+      description: What you did, what you expected, and what happened instead.
+    validations:
+      required: true
+
+  - type: textarea
+    id: output
+    attributes:
+      label: Run log
+      description: A link to the failing run if the repository is public, or the failing step's output. The `run-log` artifact holds the LaTeX logs.
+      render: shell
+    validations:
+      required: true
+
+  - type: input
+    id: environment
+    attributes:
+      label: Compared with Overleaf
+      description: Does the same document build on Overleaf, and with which TeX Live version?
+    validations:
+      required: true

@@ -1,16 +1,25 @@
-name: Release Please
+name: release-please
 
 on:
   push:
     branches: [main]
 
-permissions:
-  contents: write
-  pull-requests: write
+permissions: {}
+
+# Queued, never cancelled: a release stopped between tagging and moving the
+# major tag would leave callers' @v1 behind.
+concurrency:
+  group: ${{ github.workflow }}
+  cancel-in-progress: false
 
 jobs:
   release-please:
+    name: maintain the release PR
     runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: write
+      pull-requests: write
     steps:
       - uses: googleapis/release-please-action@v5
         id: release
