@@ -1,4 +1,4 @@
-name: Build LaTeX document
+name: build
 
 # Reusable workflow: compiles the calling repository's LaTeX document and
 # publishes the PDF. Builds with only the packages in the package list; if
@@ -117,10 +117,20 @@ env:
     /usr/share/fonts/truetype/msttcorefonts
     /usr/share/fonts/truetype/inconsolata
 
+# Read-only unless a job asks for more: build_latex and update_packages widen
+# it to publish and commit, and format, which only reads, keeps it. Callers
+# grant contents: write, and without this the format job would hold it too.
+permissions:
+  contents: read
+
 jobs:
   build_latex:
 
     runs-on: ubuntu-latest
+    # A stall guard, not a budget: a cached build takes under a minute and an
+    # uncached TeX Live install a few. A mirror that stops responding would
+    # otherwise hold the run for GitHub's six-hour default.
+    timeout-minutes: 30
 
     # Needed to create tags and releases
     permissions:
@@ -245,6 +255,8 @@ jobs:
     if: ${{ needs.build_latex.outputs.update_packages }}
 
     runs-on: ubuntu-latest
+    # Usually under three minutes, most of it pulling the full TeX Live image.
+    timeout-minutes: 30
 
     outputs:
       warnings: ${{ steps.quality.outputs.warnings }}
@@ -365,6 +377,8 @@ jobs:
     if: ${{ inputs.format_check }}
 
     runs-on: ubuntu-latest
+    # Seconds in practice: one tex-fmt download and a check.
+    timeout-minutes: 10
 
     steps:
       - name: Set up Git repository
