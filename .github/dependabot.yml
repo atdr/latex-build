@@ -16,8 +16,9 @@ updates:
         - "atdr/*"
     # Dependabot counts each atdr/github-boilerplate workflow as its own
     # dependency, so one boilerplate release would open a PR per pinned file.
-    # Grouped, the pins move together. They run only in this repo, so retitle
-    # the PR `ci:` when merging (see AGENTS.md).
+    # Grouped, the pins move together. They run only in this repo, and
+    # release-please-config.json's exclude-paths keeps such a bump from cutting
+    # a release despite its `fix:` prefix.
     groups:
       github-boilerplate:
         patterns:

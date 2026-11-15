@@ -88,7 +88,7 @@ The list is rewritten from scratch, so unused packages are dropped as well as mi
 
 - **Test in Actions:** there is no local equivalent of the runner. Push a branch and open a PR; `ci.yml` builds every test document on TeX Live 2016 and latest, since installers, latexmk and log formats differ between years. Add a test document for any new failure mode.
 - **Releases:** merge to `main` with Conventional Commit messages; release-please opens a release PR, and merging it tags `vX.Y.Z` and moves `vX` to it. Do not hand-edit `CHANGELOG.md`, and do not move `vX` by hand. Every `fix:` or `feat:` merged to `main` reaches all callers on the next release, so keep changes that callers do not see as `ci:`, `test:`, `docs:` or `chore:`.
-- **Dependabot PRs** are titled `fix:`, since most bump actions that `build.yml` runs in callers. When one only touches `release-please.yml`, `ci.yml`, `checks.yml` or `pull-request.yml`, squash-merge it with a `ci:` subject instead, so it does not cut a release.
+- **Dependabot PRs** are titled `fix:`, since most bump actions that `build.yml` runs in callers. Patch and minor bumps merge themselves once green (`auto-merge.yml`). A commit that touches only workflows callers never run (`auto-merge.yml`, `checks.yml`, `ci.yml`, `pull-request.yml`, `release-please.yml`) cuts no release whatever its prefix: `release-please-config.json` lists them in `exclude-paths`. Add a new repo-only workflow there too.
 - **Breaking changes** (a renamed or removed input, a changed default): mark the commit `feat!:` or add `BREAKING CHANGE:` to its body, so callers get a major version.
 
 ## Conventions
