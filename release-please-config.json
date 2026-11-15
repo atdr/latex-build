@@ -3,7 +3,14 @@
   "include-component-in-tag": false,
   "packages": {
     ".": {
-      "release-type": "simple"
+      "release-type": "simple",
+      "exclude-paths": [
+        ".github/workflows/auto-merge.yml",
+        ".github/workflows/checks.yml",
+        ".github/workflows/ci.yml",
+        ".github/workflows/pull-request.yml",
+        ".github/workflows/release-please.yml"
+      ]
     }
   }
 }
