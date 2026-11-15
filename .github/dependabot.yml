@@ -7,3 +7,18 @@ updates:
       interval: weekly
     commit-message:
       prefix: fix
+    # A new release waits out GitHub's default three days before Dependabot
+    # offers it, time for a compromised one to be caught and pulled. atdr's own
+    # actions skip the wait: there is no third party to wait on.
+    cooldown:
+      default-days: 3
+      exclude:
+        - "atdr/*"
+    # Dependabot counts each atdr/github-boilerplate workflow as its own
+    # dependency, so one boilerplate release would open a PR per pinned file.
+    # Grouped, the pins move together. They run only in this repo, so retitle
+    # the PR `ci:` when merging (see AGENTS.md).
+    groups:
+      github-boilerplate:
+        patterns:
+          - "atdr/github-boilerplate*"

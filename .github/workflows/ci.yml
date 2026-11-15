@@ -1,4 +1,4 @@
-name: Test
+name: ci
 
 # Builds each test document with this commit's workflow and scripts, on an
 # old and the latest TeX Live release, as a calling repository would. The
@@ -9,6 +9,21 @@ on:
     branches: [main]
   pull_request:
   workflow_dispatch:
+
+# Read-only by default. The jobs that call build.yml grant it contents: write,
+# which it needs as a caller's workflow would; with commit_package_list and
+# publish_release off it writes nothing here.
+permissions:
+  contents: read
+
+# Pull requests share a group per branch, so a new push cancels the run it
+# supersedes. Every other run gets a group of its own: GitHub keeps only one
+# pending run per group and drops the older for a newer, even with
+# cancel-in-progress false, so a shared group on main would leave commits
+# with no result.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event_name == 'pull_request' && github.ref || github.run_id }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 jobs:
   build:
@@ -63,6 +78,7 @@ jobs:
   check_warnings:
     needs: warnings
     runs-on: ubuntu-latest
+    timeout-minutes: 5
     steps:
       - name: Check that warnings were reported
         env:
@@ -75,6 +91,7 @@ jobs:
   # tests/format is deliberately not formatted, so the check must fail on it
   format_fails:
     runs-on: ubuntu-latest
+    timeout-minutes: 5
     steps:
       - name: Set up Git repository
         uses: actions/checkout@v7
@@ -105,3 +122,24 @@ jobs:
       commit_package_list: false
       publish_release: false
       artifact_suffix: -version-override
+
+  # The one check branch protection requires from this workflow, so adding a
+  # test document or a TeX Live version never touches the ruleset.
+  gate:
+    name: ci gate
+    # Not always(): a run superseded by a newer one is cancelled, and its gate
+    # would report a failure on the same commit the newer run is checking.
+    if: ${{ !cancelled() }}
+    needs: [build, warnings, check_warnings, format_fails, version-override]
+    timeout-minutes: 5
+    runs-on: ubuntu-latest
+    steps:
+      - name: Require every job to have passed
+        env:
+          RESULTS: ${{ join(needs.*.result, ' ') }}
+        run: |
+          for result in $RESULTS; do
+            case "$result" in
+              failure|cancelled) echo "::error::a required job finished as $result"; exit 1 ;;
+            esac
+          done

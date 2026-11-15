@@ -4,22 +4,24 @@ A reusable GitHub Actions workflow that compiles a repository's LaTeX document t
 
 ## Layout
 
-| Path | Purpose |
-|---|---|
-| `.github/workflows/build.yml` | The reusable workflow (`on: workflow_call`) |
-| `scripts/select-texlive.sh` | Picks the TeX Live repository for a release year (the frozen historic archive for past years) |
-| `scripts/install-system-packages.sh` | Installs what Overleaf has but TeX Live lacks on the runner: Ghostscript, Microsoft's core fonts, Ubuntu's Inconsolata |
-| `scripts/setup-fonts.sh` | Registers TeX Live's own fonts with fontconfig, so `fontspec` can load them by name |
-| `scripts/setup-rungs.sh` | Replaces TeX Live's `rungs` with one that runs `gs`, for EPS figures |
-| `scripts/compile.sh` | Compiles; names the TeX Live package providing each missing file, or publishes anyway if a PDF still came out |
-| `scripts/check-quality.sh` | With `lint` or `annotate_warnings`, reports chktex findings and the final log's warnings as annotations and in the job summary |
-| `scripts/check-format.sh` | With `format_check`, checks the document's `.tex`, `.cls` and `.sty` files against tex-fmt, annotating and printing the diff |
-| `scripts/list-packages.sh` | Runs in a full TeX Live image; rewrites the package list from what the build used |
-| `scripts/commit-package-list.sh` | Commits a changed package list and pushes it: replayed onto a branch that moved during the build, or sent to a new branch where the branch refuses direct pushes |
-| `scripts/publish-release.sh` | Attaches the PDF to a `build-<short SHA>` release |
-| `tests/` | Test documents, one per failure mode seen in real projects; `tests/format` is deliberately not formatted |
-| `.github/workflows/test.yml` | Builds every test document on TeX Live 2016 and latest |
-| `.github/workflows/release-please.yml` | Release PRs, tags and the changelog |
+| Path                                   | Purpose                                                                                                                                                          |
+| -------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `.github/workflows/build.yml`          | The reusable workflow (`on: workflow_call`)                                                                                                                      |
+| `scripts/select-texlive.sh`            | Picks the TeX Live repository for a release year (the frozen historic archive for past years)                                                                    |
+| `scripts/install-system-packages.sh`   | Installs what Overleaf has but TeX Live lacks on the runner: Ghostscript, Microsoft's core fonts, Ubuntu's Inconsolata                                           |
+| `scripts/setup-fonts.sh`               | Registers TeX Live's own fonts with fontconfig, so `fontspec` can load them by name                                                                              |
+| `scripts/setup-rungs.sh`               | Replaces TeX Live's `rungs` with one that runs `gs`, for EPS figures                                                                                             |
+| `scripts/compile.sh`                   | Compiles; names the TeX Live package providing each missing file, or publishes anyway if a PDF still came out                                                    |
+| `scripts/check-quality.sh`             | With `lint` or `annotate_warnings`, reports chktex findings and the final log's warnings as annotations and in the job summary                                   |
+| `scripts/check-format.sh`              | With `format_check`, checks the document's `.tex`, `.cls` and `.sty` files against tex-fmt, annotating and printing the diff                                     |
+| `scripts/list-packages.sh`             | Runs in a full TeX Live image; rewrites the package list from what the build used                                                                                |
+| `scripts/commit-package-list.sh`       | Commits a changed package list and pushes it: replayed onto a branch that moved during the build, or sent to a new branch where the branch refuses direct pushes |
+| `scripts/publish-release.sh`           | Attaches the PDF to a `build-<short SHA>` release                                                                                                                |
+| `tests/`                               | Test documents, one per failure mode seen in real projects; `tests/format` is deliberately not formatted                                                         |
+| `.github/workflows/ci.yml`             | Builds every test document on TeX Live 2016 and latest, ending in the `ci gate` check                                                                            |
+| `.github/workflows/release-please.yml` | Release PRs, tags and the changelog                                                                                                                              |
+| `.github/workflows/checks.yml`         | markdownlint, mdformat and atdr's conventions check, from atdr/github-boilerplate                                                                                |
+| `.github/workflows/pull-request.yml`   | Conventional Commit types for each commit and the PR title, from atdr/github-boilerplate                                                                         |
 
 ## How callers use it
 
@@ -84,15 +86,15 @@ The list is rewritten from scratch, so unused packages are dropped as well as mi
 
 ## Changing things
 
-- **Test in Actions:** there is no local equivalent of the runner. Push a branch and open a PR; `test.yml` builds every test document on TeX Live 2016 and latest, since installers, latexmk and log formats differ between years. Add a test document for any new failure mode.
+- **Test in Actions:** there is no local equivalent of the runner. Push a branch and open a PR; `ci.yml` builds every test document on TeX Live 2016 and latest, since installers, latexmk and log formats differ between years. Add a test document for any new failure mode.
 - **Releases:** merge to `main` with Conventional Commit messages; release-please opens a release PR, and merging it tags `vX.Y.Z` and moves `vX` to it. Do not hand-edit `CHANGELOG.md`, and do not move `vX` by hand. Every `fix:` or `feat:` merged to `main` reaches all callers on the next release, so keep changes that callers do not see as `ci:`, `test:`, `docs:` or `chore:`.
-- **Dependabot PRs** are titled `fix:`, since most bump actions that `build.yml` runs in callers. When one only touches `release-please.yml` or `test.yml`, squash-merge it with a `ci:` subject instead, so it does not cut a release.
+- **Dependabot PRs** are titled `fix:`, since most bump actions that `build.yml` runs in callers. When one only touches `release-please.yml`, `ci.yml`, `checks.yml` or `pull-request.yml`, squash-merge it with a `ci:` subject instead, so it does not cut a release.
 - **Breaking changes** (a renamed or removed input, a changed default): mark the commit `feat!:` or add `BREAKING CHANGE:` to its body, so callers get a major version.
 
 ## Conventions
 
-- **Git workflow:** GitHub Flow. Branch off `main`, open a PR, merge once `Test` passes.
-- **Line length:** code (YAML, shell) wraps at 80 columns. Markdown is not hard-wrapped: one line per paragraph or list item.
+- **Git workflow:** GitHub Flow. Branch off `main`, open a PR, merge once the gates pass. The `main` ruleset requires `ci gate`, `checks gate` (markdownlint, mdformat and atdr's conventions check) and `pull-request gate` (Conventional Commit types for each commit and the PR title). `checks.yml` and `pull-request.yml` come from [atdr/github-boilerplate](https://github.com/atdr/github-boilerplate), pinned by tag.
+- **Line length:** code (YAML, shell) wraps at 80 columns. Markdown is not hard-wrapped: one line per paragraph or list item. mdformat pads tables (`wrap = "keep"` in `.mdformat.toml`), and markdownlint's line length rule is off for the same reason.
 - **Commits and PR titles:** [Conventional Commits](https://www.conventionalcommits.org/). They are the changelog: `fix:` for a build behaviour fix, `feat:` for a new input or capability, `docs:`, `ci:` and `test:` for changes callers do not see. The workflow's own list commits in callers use `chore: update TeX Live package list`.
 
 ## Pitfalls
